@@ -1,0 +1,17 @@
+{
+  "name": "mashigo-fingerprint-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Thin local bridge between the kiosk browser and the Java/SourceAFIS fingerprint matcher service.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
