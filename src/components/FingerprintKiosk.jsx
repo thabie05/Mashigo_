@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { ArrowLeft, Clock } from 'lucide-react';
 import { doc, collection, onSnapshot, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { recordFingerprintAction } from '../utils/attendanceWrites';
@@ -24,8 +25,11 @@ function AnalogClock({ now }) {
 
   return (
     <svg viewBox="0 0 200 200" style={{ width: '160px', height: '160px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.05))' }}>
-      <circle cx="100" cy="100" r="96" fill="#ffffff" stroke="#e0e0e0" strokeWidth="2" />
-      <circle cx="100" cy="100" r="88" fill="none" stroke="#f0f0f0" strokeWidth="1" />
+      {/* Clock Face */}
+      <circle cx="100" cy="100" r="96" fill="var(--bg-card)" stroke="var(--border-color)" strokeWidth="2" />
+      <circle cx="100" cy="100" r="88" fill="none" stroke="var(--border-color)" strokeWidth="1" />
+      
+      {/* Ticks */}
       {ticks.map((i) => {
         const angle = (i * 30 * Math.PI) / 180;
         const isQuarter = i % 3 === 0;
@@ -38,35 +42,25 @@ function AnalogClock({ now }) {
         return (
           <line
             key={i}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            stroke={isQuarter ? '#0f9d58' : '#ccc'}
+            x1={x1} y1={y1} x2={x2} y2={y2}
+            stroke={isQuarter ? 'var(--accent-green-text)' : 'var(--text-muted)'}
             strokeWidth={isQuarter ? 3 : 1.5}
             strokeLinecap="round"
           />
         );
       })}
+
       {/* Hour Hand */}
-      <line
-        x1="100" y1="100" x2="100" y2="58"
-        stroke="#333" strokeWidth="5" strokeLinecap="round"
-        style={{ transformOrigin: '100px 100px', transform: `rotate(${hourDeg}deg)` }}
-      />
+      <line x1="100" y1="100" x2="100" y2="58" stroke="var(--text-main)" strokeWidth="5" strokeLinecap="round" style={{ transformOrigin: '100px 100px', transform: `rotate(${hourDeg}deg)` }} />
+      
       {/* Minute Hand */}
-      <line
-        x1="100" y1="100" x2="100" y2="38"
-        stroke="#333" strokeWidth="3.5" strokeLinecap="round"
-        style={{ transformOrigin: '100px 100px', transform: `rotate(${minDeg}deg)` }}
-      />
+      <line x1="100" y1="100" x2="100" y2="38" stroke="var(--text-main)" strokeWidth="3.5" strokeLinecap="round" style={{ transformOrigin: '100px 100px', transform: `rotate(${minDeg}deg)` }} />
+      
       {/* Second Hand */}
-      <line
-        x1="100" y1="106" x2="100" y2="30"
-        stroke="#d93025" strokeWidth="1.5" strokeLinecap="round"
-        style={{ transformOrigin: '100px 100px', transform: `rotate(${secDeg}deg)` }}
-      />
-      <circle cx="100" cy="100" r="4.5" fill="#0f9d58" />
+      <line x1="100" y1="106" x2="100" y2="30" stroke="var(--status-a-text)" strokeWidth="1.5" strokeLinecap="round" style={{ transformOrigin: '100px 100px', transform: `rotate(${secDeg}deg)` }} />
+      
+      {/* Center Dot */}
+      <circle cx="100" cy="100" r="4.5" fill="var(--accent-green-text)" />
     </svg>
   );
 }
@@ -169,12 +163,24 @@ function FingerprintKiosk() {
   };
 
   const handleQuickAdd = async () => {
-    if (adminPassword !== 'admin123') {
+    const name = newEmployeeName.trim();
+    if (!name) { setAdminError('Enter the new employee name'); return; }
+
+    // Check the password against the real admin account instead of a hard-coded string
+    let isAdmin = false;
+    try {
+      const credSnap = await getDoc(doc(db, 'users', 'credentials'));
+      const users = credSnap.exists() ? credSnap.data().users || [] : [];
+      isAdmin = users.some((u) => u.role === 'admin' && u.password === adminPassword);
+    } catch (err) {
+      console.error('Could not verify admin password:', err);
+      setAdminError('Could not verify password. Check connection.');
+      return;
+    }
+    if (!isAdmin) {
       setAdminError('Incorrect password');
       return;
     }
-    const name = newEmployeeName.trim();
-    if (!name) return;
     const newEmp = { id: Date.now().toString(), name, isDeleted: false };
     const docRef = doc(db, 'rollcall', 'data');
     const snap = await getDoc(docRef);
@@ -259,7 +265,8 @@ function FingerprintKiosk() {
         try { sdkRef.current.stopAcquisition(); } catch (e) {}
         sdkRef.current = null;
       }
-      setStatus('Enrollment in progress...');
+      setStatus('enrolling');
+      setMessage('Enrollment in progress…');
       return;
     }
 
@@ -323,13 +330,13 @@ function FingerprintKiosk() {
   const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   // Determine colors based on status
-  let fingerprintColor = '#0f9d58'; // Default green
-  if (status === 'scanning') fingerprintColor = '#f29900'; // Yellow
-  if (status === 'matched') fingerprintColor = '#0f9d58'; // Green
-  if (status === 'no-match' || status === 'error') fingerprintColor = '#d93025'; // Red
+  let fingerprintColor = 'var(--accent-green-text)'; 
+  if (status === 'scanning') fingerprintColor = 'var(--accent-yellow-text)'; 
+  if (status === 'matched') fingerprintColor = 'var(--accent-green-text)'; 
+  if (status === 'no-match' || status === 'error') fingerprintColor = 'var(--accent-red-text)'; 
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f7f6', color: '#333', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-body)', color: 'var(--text-main)', padding: '24px', position: 'relative', overflow: 'hidden' }}>
       
       <style>{`
         @keyframes stampPunch { 0% { transform: scale(1); } 30% { transform: scale(0.9); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
@@ -342,16 +349,16 @@ function FingerprintKiosk() {
 
       {/* Top Navigation */}
       <div style={{ position: 'absolute', top: '20px', left: '20px', display: 'flex', gap: '10px', zIndex: 10 }}>
-        <button onClick={goHome} style={{ background: '#fff', border: '1px solid #e0e0e0', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <i className="fa-solid fa-arrow-left"></i> Home
+        <button onClick={goHome} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 3px var(--shadow-color)' }}>
+          <ArrowLeft size={16} className="inline-block align-middle shrink-0" /> Home
         </button>
-        <button onClick={() => setShowHistory(!showHistory)} style={{ background: '#fff', border: '1px solid #e0e0e0', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <i className="fa-regular fa-clock"></i> {showHistory ? 'Hide History' : "Today's History"}
+        <button onClick={() => setShowHistory(!showHistory)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 3px var(--shadow-color)' }}>
+          <Clock size={16} className="inline-block align-middle shrink-0" /> {showHistory ? 'Hide History' : "Today's History"}
         </button>
       </div>
 
       <div style={{ position: 'absolute', top: '24px', right: '24px', textAlign: 'right', zIndex: 10 }}>
-        <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: '#888', fontWeight: 600 }}>{dateLabel}</p>
+        <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)', fontWeight: 600 }}>{dateLabel}</p>
       </div>
 
       {/* Main Kiosk Layout */}
@@ -361,22 +368,22 @@ function FingerprintKiosk() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <p style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '2px', color: '#0f9d58', fontWeight: 700, marginBottom: '4px' }}>B. MASHILO DESIGNS</p>
-            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#333' }}>Attendance Register</h1>
+            <p style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--accent-green-text)', fontWeight: 700, marginBottom: '4px' }}>B. MASHILO DESIGNS</p>
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-main)' }}>Attendance Register</h1>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
             <AnalogClock now={now} />
-            <p style={{ marginTop: '16px', fontSize: '24px', letterSpacing: '2px', color: '#333', fontWeight: 600 }}>{timeLabel}</p>
+            <p style={{ marginTop: '16px', fontSize: '24px', letterSpacing: '2px', color: 'var(--text-main)', fontWeight: 600 }}>{timeLabel}</p>
           </div>
 
           {/* Fingerprint Icon */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
             <div style={{ 
               width: '120px', height: '120px', borderRadius: '50%', 
-              backgroundColor: '#fff', border: `3px solid ${fingerprintColor}`,
+              backgroundColor: 'var(--bg-card)', border: `3px solid ${fingerprintColor}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 0 20px ${fingerprintColor}40`,
+              boxShadow: `0 0 20px color-mix(in srgb, ${fingerprintColor} 25%, transparent)`,
               transition: 'all 0.3s ease',
               padding: '20px'
             }} className={status === 'scanning' ? 'fingerprint-pulse' : ''}>
@@ -389,72 +396,71 @@ function FingerprintKiosk() {
             
             {status === 'matched' || status === 'no-match' || status === 'error' ? (
               <div className={`ticket-stub ${stampPulse ? 'stamp-active' : ''}`} style={{ 
-                background: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '20px', width: '100%', 
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)', textAlign: 'center', position: 'relative', overflow: 'hidden'
+                background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', width: '100%', 
+                boxShadow: '0 4px 12px var(--shadow-color)', textAlign: 'center', position: 'relative', overflow: 'hidden'
               }}>
-                {/* Decorative receipt edges */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `repeating-linear-gradient(90deg, transparent, transparent 6px, #f4f7f6 6px, #f4f7f6 8px)` }}></div>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `repeating-linear-gradient(90deg, transparent, transparent 6px, var(--bg-body) 6px, var(--bg-body) 8px)` }}></div>
                 
-                <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#888', fontWeight: 600, marginBottom: '8px' }}>
+                <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '8px' }}>
                   {status === 'matched' ? (selectedAction === 'start' || message.includes('IN') ? 'Clock-In Ticket' : 'Clock-Out Ticket') : 'Not Recorded'}
                 </p>
                 
-                {matchedEmployee && <p style={{ fontSize: '20px', fontWeight: 700, color: '#333', marginBottom: '4px' }}>{matchedEmployee.name}</p>}
-                <p style={{ fontSize: '14px', color: '#666' }}>{message}</p>
+                {matchedEmployee && <p style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>{matchedEmployee.name}</p>}
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{message}</p>
 
                 {matchedEmployee && (() => {
                   const todayKey = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
                   const log = timeLogs[`${matchedEmployee.id}-${todayKey}`];
-                  if (log?.clockIn && !log?.clockOut) return <p style={{ fontSize: '13px', color: '#f29900', marginTop: '10px', fontWeight: 600 }}>⏳ Currently Clocked In</p>;
-                  if (log?.clockIn && log?.clockOut) return <p style={{ fontSize: '13px', color: '#0f9d58', marginTop: '10px', fontWeight: 600 }}>✅ Clocked Out</p>;
+                  if (log?.clockIn && !log?.clockOut) return <p style={{ fontSize: '13px', color: 'var(--accent-yellow-text)', marginTop: '10px', fontWeight: 600 }}>⏳ Currently Clocked In</p>;
+                  if (log?.clockIn && log?.clockOut) return <p style={{ fontSize: '13px', color: 'var(--accent-green-text)', marginTop: '10px', fontWeight: 600 }}>✅ Clocked Out</p>;
                   return null;
                 })()}
               </div>
             ) : canPickAction ? (
               <>
-                <p style={{ color: '#888', fontSize: '14px', marginBottom: '16px', fontWeight: 500 }}>{message}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px', fontWeight: 500 }}>{message}</p>
                 {!selectedAction ? (
                   <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
                     <button onClick={() => { setSelectedAction('start'); setMessage('Scan your finger to start your shift.'); }}
-                      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: '#d1f2e5', color: '#0f9d58', border: '1px solid #0f9d58', padding: '16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'var(--status-p-bg)', color: 'var(--status-p-text)', border: '1px solid var(--status-p-text)', padding: '16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}>
                       <span style={{ fontSize: '24px' }}>🟢</span>
                       <span style={{ fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Start Shift</span>
                     </button>
                     <button onClick={() => { setSelectedAction('end'); setMessage('Scan your finger to end your shift.'); }}
-                      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: '#fce8e6', color: '#d93025', border: '1px solid #d93025', padding: '16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'var(--status-a-bg)', color: 'var(--status-a-text)', border: '1px solid var(--status-a-text)', padding: '16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}>
                       <span style={{ fontSize: '24px' }}>🔴</span>
                       <span style={{ fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>End Shift</span>
                     </button>
                   </div>
                 ) : (
                   <button onClick={() => { setSelectedAction(null); setMessage('Select your action, then scan your finger.'); }}
-                    style={{ background: 'none', border: 'none', color: '#888', textDecoration: 'underline', fontSize: '14px', cursor: 'pointer', padding: '8px' }}>
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', textDecoration: 'underline', fontSize: '14px', cursor: 'pointer', padding: '8px' }}>
                     Cancel Selection
                   </button>
                 )}
               </>
             ) : (
-              <p style={{ color: '#888', fontSize: '14px', fontWeight: 500 }}>{message}</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>{message}</p>
             )}
 
             {/* Admin Fallback */}
             {(status === 'no-match' || status === 'error') && !showAdminLogin && !enrollingNewEmployee && (
-              <button onClick={() => setShowAdminLogin(true)} style={{ marginTop: '16px', background: 'none', border: 'none', color: '#1a73e8', textDecoration: 'underline', fontSize: '13px', cursor: 'pointer' }}>
+              <button onClick={() => setShowAdminLogin(true)} style={{ marginTop: '16px', background: 'none', border: 'none', color: 'var(--accent-blue-text)', textDecoration: 'underline', fontSize: '13px', cursor: 'pointer' }}>
                 Admin: Enroll New Employee
               </button>
             )}
 
             {showAdminLogin && (
-              <div style={{ marginTop: '16px', background: '#fff', border: '1px solid #e0e0e0', padding: '16px', borderRadius: '8px', width: '100%', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <div style={{ marginTop: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '16px', borderRadius: '8px', width: '100%', boxShadow: '0 4px 12px var(--shadow-color)' }}>
                 <input type="password" placeholder="Admin password" value={adminPassword} onChange={(e) => { setAdminPassword(e.target.value); setAdminError(''); }}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', marginBottom: '8px', outline: 'none' }} />
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px', marginBottom: '8px', outline: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }} />
                 <input type="text" placeholder="New employee name" value={newEmployeeName} onChange={(e) => setNewEmployeeName(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', marginBottom: '12px', outline: 'none' }} />
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '13px', marginBottom: '12px', outline: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }} />
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={handleQuickAdd} style={{ flex: 1, background: '#0f9d58', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Create & Enroll</button>
-                  <button onClick={() => setShowAdminLogin(false)} style={{ flex: 1, background: '#f0f0f0', color: '#333', border: 'none', padding: '8px', borderRadius: '4px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={handleQuickAdd} style={{ flex: 1, background: 'var(--accent-green-text)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Create & Enroll</button>
+                  <button onClick={() => setShowAdminLogin(false)} style={{ flex: 1, background: 'var(--bg-hover)', color: 'var(--text-main)', border: 'none', padding: '8px', borderRadius: '4px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 </div>
-                {adminError && <p style={{ color: '#d93025', fontSize: '12px', marginTop: '8px', textAlign: 'center' }}>{adminError}</p>}
+                {adminError && <p style={{ color: 'var(--status-a-text)', fontSize: '12px', marginTop: '8px', textAlign: 'center' }}>{adminError}</p>}
               </div>
             )}
 
@@ -463,22 +469,22 @@ function FingerprintKiosk() {
 
         {/* Right Side: History Panel */}
         {showHistory && (
-          <div style={{ width: '300px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', animation: 'ticketSlideIn 0.3s ease-out' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e0e0e0', paddingBottom: '12px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#333', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Today's Clock History</h3>
-              <button onClick={() => setShowHistory(false)} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#888', cursor: 'pointer' }}>&times;</button>
+          <div style={{ width: '300px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 12px var(--shadow-color)', animation: 'ticketSlideIn 0.3s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Today's Clock History</h3>
+              <button onClick={() => setShowHistory(false)} style={{ background: 'none', border: 'none', fontSize: '20px', color: 'var(--text-muted)', cursor: 'pointer' }}>&times;</button>
             </div>
             
             {todayLogs.length === 0 ? (
-              <p style={{ color: '#888', fontSize: '13px' }}>No clock events today.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No clock events today.</p>
             ) : (
               <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {todayLogs.map((log, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-                    <span style={{ color: '#333', fontWeight: 500, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.employeeName}</span>
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                    <span style={{ color: 'var(--text-main)', fontWeight: 500, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.employeeName}</span>
                     <div style={{ display: 'flex', gap: '12px', flexShrink: 0, fontWeight: 600 }}>
-                      <span style={{ color: '#0f9d58', width: '50px', textAlign: 'right' }}>{log.clockIn ? log.clockIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
-                      <span style={{ color: '#d93025', width: '50px', textAlign: 'right' }}>{log.clockOut ? log.clockOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                      <span style={{ color: 'var(--status-p-text)', width: '50px', textAlign: 'right' }}>{log.clockIn ? log.clockIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                      <span style={{ color: 'var(--status-a-text)', width: '50px', textAlign: 'right' }}>{log.clockOut ? log.clockOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
                     </div>
                   </div>
                 ))}

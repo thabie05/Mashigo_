@@ -15,7 +15,7 @@ function EmployeeReportModal({ employee, report, year, onClose }) {
   const modalContent = (
     <div 
       style={{ 
-        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', 
+        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', 
         display: 'flex', justifyContent: 'center', alignItems: 'center', 
         zIndex: 9999, padding: '20px', backdropFilter: 'blur(2px)' 
       }} 
@@ -23,20 +23,20 @@ function EmployeeReportModal({ employee, report, year, onClose }) {
     >
       <div 
         style={{ 
-          backgroundColor: '#fff', borderRadius: '12px', width: '100%', maxWidth: '900px', 
+          backgroundColor: 'var(--bg-card)', borderRadius: '12px', width: '100%', maxWidth: '900px', 
           maxHeight: '90vh', display: 'flex', flexDirection: 'column', 
-          boxShadow: '0 20px 50px rgba(0,0,0,0.2)', border: '1px solid #e0e0e0', 
+          boxShadow: '0 20px 50px var(--shadow-color)', border: '1px solid var(--border-color)', 
           overflow: 'hidden'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Header */}
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8f9fa' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#333', margin: 0 }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-header)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             📋 {employee.name} – {year} Attendance Report
           </h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', color: '#888', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', color: 'var(--text-muted)', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
         </div>
 
         {/* Scrollable Content */}
@@ -44,73 +44,73 @@ function EmployeeReportModal({ employee, report, year, onClose }) {
           
           {/* Summary Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '24px' }}>
-            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: '#f4fbf7', border: '1px solid #d1f2e5' }}>
-              <span style={{ display: 'block', fontSize: '11px', color: '#0f9d58', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>✓ Present</span>
-              <strong style={{ fontSize: '24px', color: '#333' }}>{totalPresent}</strong>
+            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: 'var(--status-p-bg)', border: '1px solid var(--border-color)' }}>
+              <span style={{ display: 'block', fontSize: '11px', color: 'var(--status-p-text)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>✓ Present</span>
+              <strong style={{ fontSize: '24px', color: 'var(--text-main)' }}>{totalPresent}</strong>
             </div>
-            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: '#fefbf3', border: '1px solid #fef7e0' }}>
-              <span style={{ display: 'block', fontSize: '11px', color: '#f29900', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>⏰ Late</span>
-              <strong style={{ fontSize: '24px', color: '#333' }}>{totalLate}</strong>
+            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: 'var(--status-l-bg)', border: '1px solid var(--border-color)' }}>
+              <span style={{ display: 'block', fontSize: '11px', color: 'var(--status-l-text)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>⏰ Late</span>
+              <strong style={{ fontSize: '24px', color: 'var(--text-main)' }}>{totalLate}</strong>
             </div>
-            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: '#f3f8fe', border: '1px solid #e8f0fe' }}>
-              <span style={{ display: 'block', fontSize: '11px', color: '#1a73e8', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>🚪 Early</span>
-              <strong style={{ fontSize: '24px', color: '#333' }}>{totalEarly}</strong>
+            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: 'var(--status-e-bg)', border: '1px solid var(--border-color)' }}>
+              <span style={{ display: 'block', fontSize: '11px', color: 'var(--status-e-text)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>🚪 Early</span>
+              <strong style={{ fontSize: '24px', color: 'var(--text-main)' }}>{totalEarly}</strong>
             </div>
-            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: '#fdf5f5', border: '1px solid #fce8e6' }}>
-              <span style={{ display: 'block', fontSize: '11px', color: '#d93025', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>✗ Absent</span>
-              <strong style={{ fontSize: '24px', color: '#333' }}>{totalAbsent}</strong>
+            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: 'var(--status-a-bg)', border: '1px solid var(--border-color)' }}>
+              <span style={{ display: 'block', fontSize: '11px', color: 'var(--status-a-text)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>✗ Absent</span>
+              <strong style={{ fontSize: '24px', color: 'var(--text-main)' }}>{totalAbsent}</strong>
             </div>
-            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: '#f9f9f9', border: '1px solid #e0e0e0' }}>
-              <span style={{ display: 'block', fontSize: '11px', color: '#666', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>📋 Off Duty</span>
-              <strong style={{ fontSize: '24px', color: '#333' }}>{totalOffDuty}</strong>
+            <div style={{ textAlign: 'center', padding: '16px 8px', borderRadius: '8px', backgroundColor: 'var(--status-o-bg)', border: '1px solid var(--border-color)' }}>
+              <span style={{ display: 'block', fontSize: '11px', color: 'var(--status-o-text)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>📋 Off Duty</span>
+              <strong style={{ fontSize: '24px', color: 'var(--text-main)' }}>{totalOffDuty}</strong>
             </div>
           </div>
 
           {/* Chart */}
-          <div style={{ width: '100%', height: '300px', marginBottom: '32px', backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px' }}>
+          <div style={{ width: '100%', height: '300px', marginBottom: '32px', backgroundColor: 'var(--bg-body)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={report} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#888' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#888' }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }}
-                  itemStyle={{ color: '#333' }}
+                  contentStyle={{ backgroundColor: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px var(--shadow-color)', fontSize: '12px', color: 'var(--text-main)' }}
+                  itemStyle={{ color: 'var(--text-main)' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                <Bar dataKey="Present" fill="#34a853" stackId="a" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="Late" fill="#fbbc04" stackId="a" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="Early" fill="#4285f4" stackId="a" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="Absent" fill="#ea4335" stackId="a" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="OffDuty" fill="#9e9e9e" stackId="a" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px', color: 'var(--text-main)' }} />
+                <Bar dataKey="Present" fill="var(--status-p-text)" stackId="a" />
+                <Bar dataKey="Late" fill="var(--status-l-text)" stackId="a" />
+                <Bar dataKey="Early" fill="var(--status-e-text)" stackId="a" />
+                <Bar dataKey="Absent" fill="var(--status-a-text)" stackId="a" />
+                <Bar dataKey="OffDuty" fill="var(--status-o-text)" stackId="a" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-                {/* Table */}
-      <div style={{ border: '1px solid #e0e0e0', borderRadius: '8px', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
-          <thead style={{ backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0' }}>
-            <tr>
-              <th style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: '#888', fontSize: '11px', textTransform: 'uppercase', width: '25%' }}>Month</th>
-              <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: '#34a853', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Present</th>
-              <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: '#fbbc04', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Late</th>
-              <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: '#4285f4', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Early</th>
-              <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: '#ea4335', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Absent</th>
-              <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: '#888', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Off Duty</th>
-              <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: '#333', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Worked</th>
-            </tr>
-          </thead>
+          {/* Table */}
+          <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
+              <thead style={{ backgroundColor: 'var(--bg-header)', borderBottom: '1px solid var(--border-color)' }}>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', width: '25%' }}>Month</th>
+                  <th style={{ textAlign: 'center', padding: '12px 8px', fontWeight: 600, color: 'var(--status-p-text)', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Present</th>
+                  <th style={{ textAlign: 'center', padding: '12px 8px', fontWeight: 600, color: 'var(--status-l-text)', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Late</th>
+                  <th style={{ textAlign: 'center', padding: '12px 8px', fontWeight: 600, color: 'var(--status-e-text)', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Early</th>
+                  <th style={{ textAlign: 'center', padding: '12px 8px', fontWeight: 600, color: 'var(--status-a-text)', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Absent</th>
+                  <th style={{ textAlign: 'center', padding: '12px 8px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Off Duty</th>
+                  <th style={{ textAlign: 'center', padding: '12px 8px', fontWeight: 600, color: 'var(--text-main)', fontSize: '11px', textTransform: 'uppercase', width: '12.5%' }}>Worked</th>
+                </tr>
+              </thead>
               <tbody>
                 {report.map((m) => (
-                  <tr key={m.month} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px', fontWeight: 500, color: '#333' }}>{m.month}</td>
-                    <td style={{ textAlign: 'center', padding: '12px', color: '#0f9d58', fontWeight: 600 }}>{m.Present}</td>
-                    <td style={{ textAlign: 'center', padding: '12px', color: '#f29900', fontWeight: 600 }}>{m.Late}</td>
-                    <td style={{ textAlign: 'center', padding: '12px', color: '#1a73e8', fontWeight: 600 }}>{m.Early}</td>
-                    <td style={{ textAlign: 'center', padding: '12px', color: '#d93025', fontWeight: 600 }}>{m.Absent}</td>
-                    <td style={{ textAlign: 'center', padding: '12px', color: '#888', fontWeight: 600 }}>{m.OffDuty}</td>
-                    <td style={{ textAlign: 'center', padding: '12px', color: '#333', fontWeight: 700 }}>{m.Present + m.Late + m.Early}</td>
+                  <tr key={m.month} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '12px', fontWeight: 500, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.month}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--status-p-text)', fontWeight: 600 }}>{m.Present}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--status-l-text)', fontWeight: 600 }}>{m.Late}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--status-e-text)', fontWeight: 600 }}>{m.Early}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--status-a-text)', fontWeight: 600 }}>{m.Absent}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>{m.OffDuty}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--text-main)', fontWeight: 700 }}>{m.Present + m.Late + m.Early}</td>
                   </tr>
                 ))}
               </tbody>

@@ -127,6 +127,13 @@ function EnrollFingerprintModal({ employee, onClose }) {
   useEffect(() => {
     let mounted = true;
 
+    // Cancel a pending teardown from the previous (StrictMode) mount, otherwise
+    // the scanner gets stopped 300ms after it starts and the modal never sees a scan.
+    if (teardownTimerRef.current) {
+      clearTimeout(teardownTimerRef.current);
+      teardownTimerRef.current = null;
+    }
+
     if (!sdkRef.current) {
       if (!window.Fingerprint || !window.Fingerprint.WebApi) {
         setStatus('Fingerprint SDK did not load. Please restart the app.');

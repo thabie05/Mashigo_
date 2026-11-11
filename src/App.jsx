@@ -63,9 +63,12 @@ function App() {
 
     setCurrentUser(safeUser);
     
-    // Save to BOTH storages just to be absolutely sure
-    localStorage.setItem('mtworld_current_user', JSON.stringify(safeUser));
-    sessionStorage.setItem('mtworld_current_user', JSON.stringify(safeUser));
+    // "Remember this device" -> localStorage (survives closing the browser);
+    // otherwise sessionStorage only (cleared when the tab closes).
+    localStorage.removeItem('mtworld_current_user');
+    sessionStorage.removeItem('mtworld_current_user');
+    const store = safeUser.rememberMe ? localStorage : sessionStorage;
+    store.setItem('mtworld_current_user', JSON.stringify(safeUser));
   };
 
   const handleLogout = () => {

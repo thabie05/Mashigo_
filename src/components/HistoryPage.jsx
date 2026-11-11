@@ -35,12 +35,12 @@ function HistoryPage({ history }) {
 
   const getStatusStyle = (status) => {
     const s = status?.toLowerCase();
-    if (s === 'present') return { color: '#0f9d58', bg: '#d1f2e5', icon: <CheckCircle size={14} /> };
-    if (s === 'absent') return { color: '#d93025', bg: '#fce8e6', icon: <XCircle size={14} /> };
-    if (s === 'late') return { color: '#f29900', bg: '#fef7e0', icon: <Clock size={14} /> };
-    if (s === 'early' || s === 'early leave') return { color: '#1a73e8', bg: '#e8f0fe', icon: <DoorOpen size={14} /> };
-    if (s === 'off duty') return { color: '#5f6368', bg: '#f1f3f4', icon: <Users size={14} /> };
-    return { color: '#888888', bg: '#f8f9fa', icon: <AlertCircle size={14} /> };
+    if (s === 'present') return { color: 'var(--status-p-text)', bg: 'var(--status-p-bg)', icon: <CheckCircle size={14} /> };
+    if (s === 'absent') return { color: 'var(--status-a-text)', bg: 'var(--status-a-bg)', icon: <XCircle size={14} /> };
+    if (s === 'late') return { color: 'var(--status-l-text)', bg: 'var(--status-l-bg)', icon: <Clock size={14} /> };
+    if (s === 'early' || s === 'early leave') return { color: 'var(--status-e-text)', bg: 'var(--status-e-bg)', icon: <DoorOpen size={14} /> };
+    if (s === 'off duty') return { color: 'var(--status-o-text)', bg: 'var(--status-o-bg)', icon: <Users size={14} /> };
+    return { color: 'var(--text-muted)', bg: 'var(--bg-hover)', icon: <AlertCircle size={14} /> };
   };
 
   const formatDate = (dateStr) => {
@@ -51,87 +51,88 @@ function HistoryPage({ history }) {
 
   const formatTime = (isoString) => {
     if (!isoString) return '—';
-    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Include the date: edits from different days were indistinguishable with time only
+    return new Date(isoString).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   };
 
   return (
-    <div style={{ padding: '25px', height: '100%', overflowY: 'auto' }}>
+    <div style={{ padding: '25px', height: '100%', overflowY: 'auto', backgroundColor: 'var(--bg-body)' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Clock color="#0f9d58" size={28} />
+          <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Clock color="var(--accent-green-text)" size={28} />
             History & Logs
           </h1>
-          <p style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>View all attendance changes and edits</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>View all attendance changes and edits</p>
         </div>
-        <div style={{ fontSize: '13px', color: '#888', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '8px 16px' }}>
-          Total Entries: <span style={{ fontWeight: 600, color: '#333' }}>{filteredHistory.length}</span>
+        <div style={{ fontSize: '13px', color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px' }}>
+          Total Entries: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{filteredHistory.length}</span>
         </div>
       </div>
 
       {/* Filters */}
-      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
         <div style={{ position: 'relative' }}>
-          <Search size={16} color="#888" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input type="text" placeholder="Search employee..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
+            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }} />
         </div>
         <div style={{ position: 'relative' }}>
-          <Filter size={16} color="#888" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+          <Filter size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '13px', outline: 'none', appearance: 'none' }}>
+            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', outline: 'none', appearance: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}>
             {statuses.map((status) => (
               <option key={status} value={status}>{status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1)}</option>
             ))}
           </select>
-          <ChevronDown size={16} color="#888" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <ChevronDown size={16} color="var(--text-muted)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         </div>
         <div style={{ position: 'relative' }}>
-          <Calendar size={16} color="#888" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+          <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input type="month" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
+            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }} />
         </div>
         <div style={{ position: 'relative' }}>
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '13px', outline: 'none', appearance: 'none' }}>
+            style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', outline: 'none', appearance: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}>
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
             <option value="employee">Sort by Employee</option>
           </select>
-          <ChevronDown size={16} color="#888" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <ChevronDown size={16} color="var(--text-muted)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         </div>
       </div>
 
       {/* History Table */}
-      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead style={{ background: '#f8f9fa', borderBottom: '1px solid #e0e0e0' }}>
+            <thead style={{ background: 'var(--bg-header)', borderBottom: '1px solid var(--border-color)' }}>
               <tr>
                 {['Time', 'Employee', 'Date', 'Status', 'Editor', 'Note'].map((head) => (
-                  <th key={head} style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: '#888', fontSize: '11px', textTransform: 'uppercase' }}>{head}</th>
+                  <th key={head} style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>{head}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filteredHistory.length === 0 ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#888' }}>No history entries found.</td></tr>
+                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>No history entries found.</td></tr>
               ) : (
                 filteredHistory.map((entry, idx) => {
                   const style = getStatusStyle(entry.status);
                   return (
-                    <tr key={entry.id || idx} style={{ borderBottom: '1px solid #e0e0e0' }}>
-                      <td style={{ padding: '12px', color: '#888', fontSize: '12px' }}>{formatTime(entry.editedAt)}</td>
-                      <td style={{ padding: '12px', fontWeight: 500, color: '#333' }}>{entry.employeeName || 'Unknown'}</td>
-                      <td style={{ padding: '12px', color: '#888' }}>{formatDate(entry.date)}</td>
+                    <tr key={entry.id || idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>{formatTime(entry.editedAt)}</td>
+                      <td style={{ padding: '12px', fontWeight: 500, color: 'var(--text-main)' }}>{entry.employeeName || 'Unknown'}</td>
+                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{formatDate(entry.date)}</td>
                       <td style={{ padding: '12px' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, color: style.color, background: style.bg }}>
                           {style.icon} {entry.status || '—'}
                         </span>
                       </td>
-                      <td style={{ padding: '12px', color: '#888' }}>{entry.editor || 'System'}</td>
-                      <td style={{ padding: '12px', color: '#888', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.note || '—'}</td>
+                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{entry.editor || 'System'}</td>
+                      <td title={entry.note || ''} style={{ padding: '12px', color: 'var(--text-muted)', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.note || '—'}</td>
                     </tr>
                   );
                 })

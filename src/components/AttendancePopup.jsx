@@ -1,78 +1,38 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 
-function AttendancePopup({ popup, popupNote, setPopupNote, popupRef, onMark, isAdmin, onConfirmClear, isLocked }) {
+function AttendancePopup({ popup, popupNote, setPopupNote, popupRef, onMark, isAdmin, isUser, isViewer, onConfirmClear, isLocked }) {
   if (!popup) return null;
+  const showStatusButtons = isAdmin || isUser;
 
-  const showStatusButtons = isAdmin || !isLocked;
-
-  // Adjust position if it goes off screen
-  const isMobile = window.innerWidth <= 768;
-  let popupStyle = {
-    position: 'absolute', zIndex: 1000,
-    background: '#fff', padding: '12px', borderRadius: '8px', 
-    boxShadow: '0 10px 25px rgba(0,0,0,0.15)', border: '1px solid #e0e0e0',
-    minWidth: '250px', display: 'flex', flexDirection: 'column', gap: '8px',
-    left: popup.x, top: popup.y
-  };
-
-  if (isMobile) {
-    // On mobile, center it or constrain it to the viewport
-    popupStyle.left = Math.max(10, Math.min(popup.x, window.innerWidth - 270));
-    popupStyle.top = Math.min(popup.y, window.innerHeight - 250);
-  } else {
-    // On desktop, just make sure it doesn't fall off the right edge
-    if (popup.x + 250 > window.innerWidth) {
-      popupStyle.left = popup.x - 250; 
-    }
+  let popupX = popup.x;
+  let popupY = popup.y;
+  if (typeof window !== 'undefined') {
+    const screenWidth = window.innerWidth;
+    if (popupX + 500 > screenWidth) popupX = screenWidth - 520; 
+    if (popupX < 10) popupX = 10;
   }
 
-  const btnStyle = {
-    padding: '8px 12px', borderRadius: '6px', fontSize: '13px', 
-    fontWeight: '600', cursor: 'pointer', border: '1px solid #e0e0e0', 
-    transition: 'all 0.2s'
-  };
-
   return createPortal(
-    <div
-      ref={popupRef}
-      className="attendance-popup"
-      style={popupStyle}
-    >
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {showStatusButtons ? (
+    <div ref={popupRef} className="absolute rounded-xl shadow-2xl p-3 flex flex-col gap-2 z-[1000] w-max max-w-[95vw]" style={{ left: popupX, top: popupY, backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="flex flex-row flex-nowrap gap-1.5 overflow-x-auto pb-1">
+        {showStatusButtons && (
           <>
-            <button onClick={() => onMark(popup.employeeId, popup.day, 'present', popupNote)} style={{...btnStyle, background: '#d1f2e5', color: '#0f9d58'}}>✓ Present</button>
-            <button onClick={() => onMark(popup.employeeId, popup.day, 'absent', popupNote)} style={{...btnStyle, background: '#fce8e6', color: '#d93025'}}>✗ Absent</button>
-            <button onClick={() => onMark(popup.employeeId, popup.day, 'late', popupNote)} style={{...btnStyle, background: '#fef7e0', color: '#f29900'}}>⏰ Late</button>
-            <button onClick={() => onMark(popup.employeeId, popup.day, 'early', popupNote)} style={{...btnStyle, background: '#e8f0fe', color: '#1a73e8'}}>🚪 Early</button>
-            <button onClick={() => onMark(popup.employeeId, popup.day, 'off', popupNote)} style={{...btnStyle, background: '#f0f0f0', color: '#666'}}>📋 Off</button>
+            <button onClick={() => onMark(popup.employeeId, popup.day, 'present', popupNote)} className="whitespace-nowrap py-1.5 px-3 rounded-lg font-semibold text-sm transition border" style={{ backgroundColor: 'var(--status-p-bg)', color: 'var(--status-p-text)', borderColor: 'transparent' }}>✓ Present</button>
+            <button onClick={() => onMark(popup.employeeId, popup.day, 'absent', popupNote)} className="whitespace-nowrap py-1.5 px-3 rounded-lg font-semibold text-sm transition border" style={{ backgroundColor: 'var(--status-a-bg)', color: 'var(--status-a-text)', borderColor: 'transparent' }}>✗ Absent</button>
+            <button onClick={() => onMark(popup.employeeId, popup.day, 'late', popupNote)} className="whitespace-nowrap py-1.5 px-3 rounded-lg font-semibold text-sm transition border" style={{ backgroundColor: 'var(--status-l-bg)', color: 'var(--status-l-text)', borderColor: 'transparent' }}>⏰ Late</button>
+            <button onClick={() => onMark(popup.employeeId, popup.day, 'early', popupNote)} className="whitespace-nowrap py-1.5 px-3 rounded-lg font-semibold text-sm transition border" style={{ backgroundColor: 'var(--status-e-bg)', color: 'var(--status-e-text)', borderColor: 'transparent' }}>🚪 Early</button>
+            <button onClick={() => onMark(popup.employeeId, popup.day, 'off', popupNote)} className="whitespace-nowrap py-1.5 px-3 rounded-lg font-semibold text-sm transition border" style={{ backgroundColor: 'var(--status-o-bg)', color: 'var(--status-o-text)', borderColor: 'transparent' }}>📋 Off Duty</button>
           </>
-        ) : (
-          <div style={{ width: '100%', textAlign: 'center', padding: '8px 0' }}>
-            <p style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>This cell is locked.</p>
-          </div>
         )}
-
         {isAdmin && (
-          <button onClick={() => onConfirmClear(popup.employeeId, popup.day)} style={{...btnStyle, background: '#fff', color: '#d93025', border: '1px solid #d93025', width: '100%', marginTop: '4px'}}>
-            🗑️ Clear Mark
-          </button>
+          <button onClick={() => { if (onConfirmClear) onConfirmClear(popup.employeeId, popup.day); }} className="whitespace-nowrap py-1.5 px-3 rounded-lg font-semibold text-sm transition border" style={{ backgroundColor: 'var(--status-a-bg)', color: 'var(--status-a-text)', borderColor: 'transparent' }}>🗑️ Clear</button>
         )}
       </div>
 
       {showStatusButtons && (
-        <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '8px', marginTop: '4px' }}>
-          <input
-            type="text"
-            placeholder="Add a note..."
-            value={popupNote}
-            onChange={(e) => setPopupNote(e.target.value)}
-            style={{
-              width: '100%', padding: '8px', border: '1px solid #e0e0e0', borderRadius: '4px', 
-              fontSize: '12px', outline: 'none'
-            }}
-          />
+        <div className="pt-2 mt-1" style={{ borderTop: '1px solid var(--border-color)' }}>
+          <input type="text" placeholder="Add a note (e.g., Doctor's appointment)" value={popupNote} onChange={(e) => setPopupNote(e.target.value)} className="w-full py-1.5 px-2.5 rounded-lg text-xs outline-none transition" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
         </div>
       )}
     </div>,
