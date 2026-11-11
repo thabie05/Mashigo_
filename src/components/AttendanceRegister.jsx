@@ -316,14 +316,40 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
         </aside>
 
         <main className="main-content">
-          <header className="top-header">
-            <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-              <Menu size={16} className="inline-block align-middle shrink-0" />
-            </button>
-
+          <header className="top-header" style={{ position: 'relative' }}>
             
-            <div className="header-actions">
-              <button className="dropdown-btn hide-mobile" style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}>{currentYear} - {currentYear+1} <ChevronDown size={16} className="inline-block align-middle shrink-0" style={{ fontSize: '10px' }} /></button>
+            {/* Only show Hamburger & Center Logo when Sidebar is CLOSED */}
+            {!isSidebarOpen && (
+              <>
+                {/* Left Side: Hamburger Menu */}
+                <div style={{ display: 'flex', alignItems: 'center', zIndex: 2 }}>
+                  <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(true)} style={{ marginRight: 0 }}>
+                    <Menu size={16} className="inline-block align-middle shrink-0" />
+                  </button>
+                </div>
+
+                {/* Center: Logo */}
+                <div 
+                  style={{ 
+                    position: 'absolute', 
+                    left: '50%', 
+                    transform: 'translateX(-50%)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    cursor: 'pointer',
+                    zIndex: 1
+                  }}
+                  onClick={() => setIsSidebarOpen(true)}
+                  title="Open Sidebar"
+                >
+                  <img src={logoSrc} alt="B. Mashilo Designs" style={{ height: '34px', objectFit: 'contain' }} />
+                </div>
+              </>
+            )}
+            
+            {/* Right Side: Actions (Always Visible) */}
+            <div className="header-actions" style={{ marginLeft: 'auto', zIndex: 2 }}>
+              
               <div className="user-profile">
                 <img src={`https://ui-avatars.com/api/?name=${currentUser.fullName.replace(' ', '+')}&background=random`} alt="User" />
                 <span className="hide-mobile">{currentUser.fullName} {currentUser.role === 'admin' && <span>(Admin)</span>}</span>

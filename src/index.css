@@ -342,3 +342,14 @@ body {
   .sidebar.open { left: 0; }
   .sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; backdrop-filter: blur(2px); }
 }
+/* =========================================
+   HEADER LOGO ANIMATION
+   ========================================= */
+.header-logo {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-5px); }
+  to { opacity: 1; transform: translateX(0); }
+}

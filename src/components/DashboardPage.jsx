@@ -37,7 +37,13 @@ export default function DashboardPage({ employees, attendance, history, currentM
     return { totalPresent, totalAbsent, totalLate, attendanceRate, chartData };
   }, [attendance, activeRoster, daysInMonth, currentMonth, currentYear]);
 
-  const recentActivity = history.slice(0, 5);
+  // FIXED: Sort history by newest first before slicing
+  const recentActivity = useMemo(() => {
+    if (!history || !Array.isArray(history)) return [];
+    return [...history]
+      .sort((a, b) => new Date(b.editedAt) - new Date(a.editedAt))
+      .slice(0, 5);
+  }, [history]);
 
   return (
     <div style={{ padding: '25px', flex: 1, minHeight: 0, overflowY: 'auto', backgroundColor: 'var(--bg-body)' }}>
@@ -85,7 +91,6 @@ export default function DashboardPage({ employees, attendance, history, currentM
         
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '20px' }}>Daily Attendance (Present vs Total)</h2>
-          {/* Explicit pixel height: a percentage height inside a flex child resolves to 0 and hides the chart */}
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
