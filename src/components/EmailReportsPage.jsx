@@ -194,6 +194,7 @@ function EmailReportsPage({ employees, attendance, currentUser }) {
         days_in_period: String(daysInRange),
         employee_count: String(employees.length),
         company_name: 'B. Mashilo Designs', 
+        logo_url: `${window.location.origin}/logo-light.png`,
       }, EMAILJS_PUBLIC_KEY);
       
       setSuccess('Report sent successfully!');

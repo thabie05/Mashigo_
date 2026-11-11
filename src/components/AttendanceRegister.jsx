@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart3, ChevronDown, ChevronLeft, ChevronRight, Fingerprint, Gauge, Landmark, List, Lock, LogOut, Mail, Menu, Moon, Pencil, Plus, Presentation, Search, Trash2, X } from 'lucide-react';
+import { BarChart3, ChevronDown, ChevronLeft, ChevronRight, Fingerprint, Gauge, List, Lock, LogOut, Mail, Menu, Moon, Pencil, Plus, Presentation, Users, Search, Trash2, X } from 'lucide-react';
 import { doc, setDoc, updateDoc, deleteField, arrayUnion, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getSAHolidays } from '../utils/holidays';
@@ -14,6 +14,8 @@ import { closeStaleShifts } from '../utils/attendanceWrites';
 import HistoryPage from './HistoryPage';
 import EmailReportsPage from './EmailReportsPage';
 import DashboardPage from './DashboardPage';
+import UserManagementPage from './UserManagementPage';
+import { can } from '../data/permissions';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -269,12 +271,6 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
       <div className="app-container">
         {isSidebarOpen && <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)}></div>}
 
-        <div className="window-controls">
-          <div className="dot red"></div>
-          <div className="dot yellow"></div>
-          <div className="dot green"></div>
-        </div>
-
         <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
           <div className="logo-area">
             <img src={logoSrc} alt="School Logo" style={{ height: '32px', objectFit: 'contain' }} />
@@ -293,17 +289,26 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
             </a>
             
             <li className="nav-section">Actions</li>
-            <a href="#" className={`nav-item ${activePage === 'history' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleNavClick('history'); }}>
-              <List size={16} className="inline-block align-middle shrink-0" /> Edit History
-            </a>
-            <a href="#" className={`nav-item ${activePage === 'email' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleNavClick('email'); }}>
-              <Mail size={16} className="inline-block align-middle shrink-0" /> Email Report
-            </a>
+            {can(currentUser, 'viewHistory') && (
+              <a href="#" className={`nav-item ${activePage === 'history' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleNavClick('history'); }}>
+                <List size={16} className="inline-block align-middle shrink-0" /> History and Logs
+              </a>
+            )}
+            {can(currentUser, 'emailReports') && (
+              <a href="#" className={`nav-item ${activePage === 'email' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleNavClick('email'); }}>
+                <Mail size={16} className="inline-block align-middle shrink-0" /> Email Report
+              </a>
+            )}
             <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); setIsSidebarOpen(false); window.location.assign(`${window.location.origin}${window.location.pathname}?kiosk=1`); }}>
               <Fingerprint size={16} className="inline-block align-middle shrink-0" /> Kiosk Mode
             </a>
             
             <li className="nav-section">System</li>
+            {currentUser.role === 'admin' && (
+              <a href="#" className={`nav-item ${activePage === 'users' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleNavClick('users'); }}>
+                <Users size={16} className="inline-block align-middle shrink-0" /> Users &amp; Access
+              </a>
+            )}
             <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); toggleTheme(); }}><Moon size={16} className="inline-block align-middle shrink-0" /> Toggle Dark Mode</a>
             <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); setShowPasswordModal(true); setIsSidebarOpen(false); }}><Lock size={16} className="inline-block align-middle shrink-0" /> Password</a>
             <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); onLogout(); }}><LogOut size={16} className="inline-block align-middle shrink-0" /> Logout</a>
@@ -316,10 +321,6 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
               <Menu size={16} className="inline-block align-middle shrink-0" />
             </button>
 
-            <div className="school-info">
-              <div className="school-icon"><Landmark size={16} className="inline-block align-middle shrink-0" /></div>
-              <span className="school-name">B. MASHILO DESIGNS ATELIER</span>
-            </div>
             
             <div className="header-actions">
               <button className="dropdown-btn hide-mobile" style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}>{currentYear} - {currentYear+1} <ChevronDown size={16} className="inline-block align-middle shrink-0" style={{ fontSize: '10px' }} /></button>
@@ -360,7 +361,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                     <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: '13px', width: '100%', background: 'transparent', color: 'var(--text-main)' }} />
                   </div>
 
-                  {currentUser.role === 'admin' && (
+                  {can(currentUser, 'manageEmployees') && (
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       {showAddForm ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', border: '1px solid var(--accent-green-text)', borderRadius: '8px', padding: '4px', height: '36px' }}>
@@ -429,7 +430,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
 
                             {daysArray.map(day => {
                               const status = getStatus(emp.id, day);
-                              const isLocked = edits[`${emp.id}-${getDateKey(day)}`] >= 2 && currentUser.role !== 'admin';
+                              const isLocked = edits[`${emp.id}-${getDateKey(day)}`] >= 2 && !can(currentUser, 'editLocked');
                               const weekend = isWeekend(day);
                               const holidayName = getHolidayName(day);
                               
@@ -445,7 +446,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                               else if (status === 'off') { bg = 'var(--status-o-bg)'; dotColor = 'var(--status-o-text)'; }
 
                               return (
-                                <td key={day} onClick={(e) => { if (!isLocked || currentUser.role === 'admin') openPopup(e, emp.id, day); }} title={holidayName || (weekend ? 'Weekend' : '')} style={{ background: bg, padding: 0, borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', textAlign: 'center', cursor: isLocked && currentUser.role !== 'admin' ? 'not-allowed' : 'pointer', height: '45px', position: 'relative' }}>
+                                <td key={day} onClick={(e) => { if (can(currentUser, 'markAttendance') && !isLocked) openPopup(e, emp.id, day); }} title={holidayName || (weekend ? 'Weekend' : '')} style={{ background: bg, padding: 0, borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', textAlign: 'center', cursor: !can(currentUser, 'markAttendance') || isLocked ? 'not-allowed' : 'pointer', height: '45px', position: 'relative' }}>
                                   {status ? <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: dotColor, margin: '0 auto', display: dotDisplay }}></div> : <span style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 'bold' }}>-</span>}
                                   {notes[`${emp.id}-${getDateKey(day)}`] && <span style={{ position: 'absolute', bottom: 2, left: '50%', transform: 'translateX(-50%)', fontSize: '9px' }}>📝</span>}
                                 </td>
@@ -502,8 +503,9 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
             </div>
           )}
 
-          {activePage === 'history' && <div className="page-content" style={{ padding: 0 }}><HistoryPage history={history} /></div>}
-          {activePage === 'email' && <div className="page-content" style={{ padding: 0 }}><EmailReportsPage employees={allActiveEmployees} attendance={attendance} currentUser={currentUser} /></div>}
+          {activePage === 'users' && currentUser.role === 'admin' && <div className="page-content" style={{ padding: 0 }}><UserManagementPage currentUser={currentUser} /></div>}
+          {activePage === 'history' && can(currentUser, 'viewHistory') && <div className="page-content" style={{ padding: 0 }}><HistoryPage history={history} /></div>}
+          {activePage === 'email' && can(currentUser, 'emailReports') && <div className="page-content" style={{ padding: 0 }}><EmailReportsPage employees={allActiveEmployees} attendance={attendance} currentUser={currentUser} /></div>}
         </main>
       </div>
 
@@ -520,7 +522,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
             <input type="text" placeholder="Add a note..." value={popupNote} onChange={(e) => setPopupNote(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
           </div>
-          {currentUser.role === 'admin' && <button type="button" onClick={() => handleClearConfirm(popup.employeeId, popup.day)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--status-a-text)', background: 'transparent', color: 'var(--status-a-text)', fontWeight: 600, cursor: 'pointer', textAlign: 'center', marginTop: '4px' }}>🗑️ Clear Mark</button>}
+          {can(currentUser, 'clearAttendance') && <button type="button" onClick={() => handleClearConfirm(popup.employeeId, popup.day)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--status-a-text)', background: 'transparent', color: 'var(--status-a-text)', fontWeight: 600, cursor: 'pointer', textAlign: 'center', marginTop: '4px' }}>🗑️ Clear Mark</button>}
         </div>
       )}
 
@@ -529,7 +531,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
           <button type="button" onClick={() => { setSelectedEmployee(employeeActionPopup.employee); setEmployeeActionPopup(null); }} style={{ padding: '12px 16px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-main)', fontWeight: 500, borderBottom: '1px solid var(--border-color)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
             <BarChart3 size={16} className="inline-block align-middle shrink-0" style={{ marginRight: '8px', color: 'var(--accent-blue-text)' }} /> View Report
           </button>
-          {currentUser.role === 'admin' && (
+          {can(currentUser, 'manageEmployees') && (
             <>
               <button type="button" onClick={() => { setEnrollEmployee(employeeActionPopup.employee); setEmployeeActionPopup(null); }} style={{ padding: '12px 16px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-main)', fontWeight: 500, borderBottom: '1px solid var(--border-color)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                 <Fingerprint size={16} className="inline-block align-middle shrink-0" style={{ marginRight: '8px', color: 'var(--status-p-text)' }} /> Enroll Fingerprint

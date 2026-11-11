@@ -32,19 +32,19 @@ function Login({ onLogin }) {
         await setDoc(docRef, { users }, { merge: true });
       }
 
-      const user = users.find((u) => u.username === username && u.password === password);
+      const user = users.find((u) => String(u.username).trim().toLowerCase() === username.trim().toLowerCase() && u.password === password);
       
       if (user) {
-        onLogin({ username: user.username, fullName: user.fullName, role: user.role, rememberMe: rememberMe });
+        onLogin({ username: user.username, fullName: user.fullName, role: user.role, permissions: user.permissions, rememberMe: rememberMe });
       } else {
         setError('Invalid username or password');
       }
     } catch (err) {
       console.error('Failed to fetch/save users:', err);
       const users = loadUsers();
-      const user = users.find((u) => u.username === username && u.password === password);
+      const user = users.find((u) => String(u.username).trim().toLowerCase() === username.trim().toLowerCase() && u.password === password);
       if (user) {
-        onLogin({ username: user.username, fullName: user.fullName, role: user.role, rememberMe: rememberMe });
+        onLogin({ username: user.username, fullName: user.fullName, role: user.role, permissions: user.permissions, rememberMe: rememberMe });
       } else {
         setError('Invalid username or password (Check connection)');
       }
@@ -67,12 +67,6 @@ function Login({ onLogin }) {
         <button type="button" onClick={toggleTheme} title="Toggle dark mode" aria-label="Toggle dark mode" style={{ position: 'absolute', top: '10px', right: '14px', zIndex: 10, background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-main)', borderRadius: '50%', width: '34px', height: '34px', cursor: 'pointer', fontSize: '15px' }}>
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
-
-        <div style={{ position: 'absolute', top: '15px', left: '15px', display: 'flex', gap: '8px', zIndex: 10 }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ff5f56' }}></div>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ffbd2e' }}></div>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#27c93f' }}></div>
-        </div>
 
         <div style={{ flex: 1, backgroundColor: 'var(--bg-header)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '40px', textAlign: 'center' }} className="hide-mobile">
           <img src={logoSrc} alt="Logo" style={{ height: '60px', objectFit: 'contain', marginBottom: '24px' }} />

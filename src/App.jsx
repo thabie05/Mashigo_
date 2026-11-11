@@ -58,6 +58,7 @@ function App() {
       username: user.username || 'user',
       fullName: user.fullName || user.username || 'User',
       role: user.role || 'user',
+      permissions: Array.isArray(user.permissions) ? user.permissions : undefined,
       rememberMe: user.rememberMe || false
     };
 
