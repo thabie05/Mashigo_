@@ -318,38 +318,30 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
         <main className="main-content">
           <header className="top-header" style={{ position: 'relative' }}>
             
-            {/* Only show Hamburger & Center Logo when Sidebar is CLOSED */}
+            {/* Left Side: Hamburger Menu (Only if sidebar is closed) */}
             {!isSidebarOpen && (
-              <>
-                {/* Left Side: Hamburger Menu */}
-                <div style={{ display: 'flex', alignItems: 'center', zIndex: 2 }}>
-                  <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(true)} style={{ marginRight: 0 }}>
-                    <Menu size={16} className="inline-block align-middle shrink-0" />
-                  </button>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', zIndex: 2 }}>
+                <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(true)} style={{ marginRight: 0 }}>
+                  <Menu size={16} className="inline-block align-middle shrink-0" />
+                </button>
+              </div>
+            )}
 
-                {/* Center: Logo */}
-                <div 
-                  style={{ 
-                    position: 'absolute', 
-                    left: '50%', 
-                    transform: 'translateX(-50%)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    cursor: 'pointer',
-                    zIndex: 1
-                  }}
-                  onClick={() => setIsSidebarOpen(true)}
-                  title="Open Sidebar"
-                >
-                  <img src={logoSrc} alt="B. Mashilo Designs" style={{ height: '34px', objectFit: 'contain' }} />
-                </div>
-              </>
+            {/* Center: Logo (Only if sidebar is closed) */}
+            {!isSidebarOpen && (
+              <div 
+                style={{ 
+                  position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', cursor: 'pointer', zIndex: 1
+                }}
+                onClick={() => setIsSidebarOpen(true)}
+                title="Open Sidebar"
+              >
+                <img src={logoSrc} alt="B. Mashilo Designs" style={{ height: '34px', objectFit: 'contain' }} />
+              </div>
             )}
             
             {/* Right Side: Actions (Always Visible) */}
             <div className="header-actions" style={{ marginLeft: 'auto', zIndex: 2 }}>
-              
               <div className="user-profile">
                 <img src={`https://ui-avatars.com/api/?name=${currentUser.fullName.replace(' ', '+')}&background=random`} alt="User" />
                 <span className="hide-mobile">{currentUser.fullName} {currentUser.role === 'admin' && <span>(Admin)</span>}</span>
@@ -421,8 +413,28 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: '900px', textAlign: 'left' }}>
                       <thead>
                         <tr>
-                          <th style={{ position: 'sticky', top: 0, left: 0, zIndex: 10, background: 'var(--bg-header)', padding: '12px 0', borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', width: '40px', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>#</th>
-                          <th style={{ position: 'sticky', top: 0, left: '40px', zIndex: 10, background: 'var(--bg-header)', padding: '12px 16px', borderBottom: '1px solid var(--border-color)', borderRight: '2px solid var(--border-color)', textAlign: 'left', fontSize: '11px', color: 'var(--text-muted)', minWidth: '180px' }}>EMPLOYEE ({activeRoster.length})</th>
+                          {/* FIXED # HEADER */}
+                          <th style={{ 
+                            position: 'sticky', top: 0, left: 0, zIndex: 10, 
+                            background: 'var(--bg-header)', 
+                            padding: '12px 0', 
+                            borderBottom: '1px solid var(--border-color)', 
+                            borderRight: '1px solid var(--border-color)', 
+                            width: '40px', minWidth: '40px', maxWidth: '40px', 
+                            boxSizing: 'border-box',
+                            textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)' 
+                          }}>#</th>
+                          
+                          {/* FIXED EMPLOYEE HEADER */}
+                          <th style={{ 
+                            position: 'sticky', top: 0, left: '40px', zIndex: 10, 
+                            background: 'var(--bg-header)', 
+                            padding: '12px 16px', 
+                            borderBottom: '1px solid var(--border-color)', 
+                            borderRight: '2px solid var(--border-color)', 
+                            textAlign: 'left', fontSize: '11px', color: 'var(--text-muted)', 
+                            minWidth: '180px' 
+                          }}>EMPLOYEE ({activeRoster.length})</th>
                           
                           {daysArray.map(day => {
                             const weekend = isWeekend(day);
@@ -444,8 +456,27 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                       <tbody>
                         {activeRoster.map((emp, index) => (
                           <tr key={emp.id}>
-                            <td style={{ position: 'sticky', left: 0, zIndex: 5, background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', width: '40px' }}>{index + 1}</td>
-                            <td style={{ position: 'sticky', left: '40px', zIndex: 5, background: 'var(--bg-card)', padding: '12px 16px', borderBottom: '1px solid var(--border-color)', borderRight: '2px solid var(--border-color)', minWidth: '180px' }}>
+                            {/* FIXED # BODY */}
+                            <td style={{ 
+                              position: 'sticky', left: 0, zIndex: 5, 
+                              background: 'var(--bg-card)', 
+                              borderBottom: '1px solid var(--border-color)', 
+                              borderRight: '1px solid var(--border-color)', 
+                              textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', 
+                              width: '40px', minWidth: '40px', maxWidth: '40px', 
+                              boxSizing: 'border-box',
+                              padding: '10px 0'
+                            }}>{index + 1}</td>
+                            
+                            {/* FIXED EMPLOYEE BODY */}
+                            <td style={{ 
+                              position: 'sticky', left: '40px', zIndex: 5, 
+                              background: 'var(--bg-card)', 
+                              padding: '12px 16px', 
+                              borderBottom: '1px solid var(--border-color)', 
+                              borderRight: '2px solid var(--border-color)', 
+                              minWidth: '180px' 
+                            }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <img src={`https://ui-avatars.com/api/?name=${emp.name.replace(' ', '+')}&background=random`} alt={emp.name} style={{ width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0 }} />
                                 <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-main)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={(e) => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); setEmployeeActionPopup({ employee: emp, x: rect.left + window.scrollX, y: rect.bottom + window.scrollY }); }}>
