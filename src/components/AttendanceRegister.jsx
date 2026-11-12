@@ -230,8 +230,9 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     const rect = e.currentTarget.getBoundingClientRect();
     let x = rect.left + window.scrollX;
     let y = rect.bottom + window.scrollY;
-    x = Math.max(8, Math.min(x, window.innerWidth + window.scrollX - 210));
-    if (rect.bottom + 340 > window.innerHeight) y = Math.max(8 + window.scrollY, rect.top + window.scrollY - 340);
+    const popupW = Math.min(440, window.innerWidth - 16);
+    x = Math.max(8, Math.min(x - 20, window.innerWidth + window.scrollX - popupW - 8));
+    if (rect.bottom + 120 > window.innerHeight) y = Math.max(8 + window.scrollY, rect.top + window.scrollY - 120);
     setPopup({ employeeId, day, x, y });
   };
 
@@ -354,42 +355,42 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
           )}
 
           {activePage === 'register' && (
-            <div className="page-content" style={{ padding: '24px', backgroundColor: 'var(--bg-body)' }}>
+            <div className="page-content" style={{ padding: '14px', backgroundColor: 'var(--bg-body)' }}>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
-                  <button onClick={() => setActiveTab('register')} style={{ padding: '8px 20px', fontSize: '13px', border: 'none', background: activeTab === 'register' ? 'var(--bg-hover)' : 'none', fontWeight: 500, color: activeTab === 'register' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Register</button>
-                  <button onClick={() => setActiveTab('summary')} style={{ padding: '8px 20px', fontSize: '13px', border: 'none', background: activeTab === 'summary' ? 'var(--bg-hover)' : 'none', fontWeight: 500, color: activeTab === 'summary' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Summary</button>
+                  <button onClick={() => setActiveTab('register')} style={{ padding: '5px 12px', fontSize: '12px', border: 'none', background: activeTab === 'register' ? 'var(--bg-hover)' : 'none', fontWeight: 500, color: activeTab === 'register' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Register</button>
+                  <button onClick={() => setActiveTab('summary')} style={{ padding: '5px 12px', fontSize: '12px', border: 'none', background: activeTab === 'summary' ? 'var(--bg-hover)' : 'none', fontWeight: 500, color: activeTab === 'summary' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Summary</button>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-card)', overflow: 'hidden' }}>
-                    <button type="button" onClick={handlePrevMonth} style={{ padding: '8px 16px', border: 'none', background: 'transparent', borderRight: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                      <ChevronLeft size={16} className="inline-block align-middle shrink-0" style={{ fontSize: '12px' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'var(--bg-card)', overflow: 'hidden' }}>
+                    <button type="button" onClick={handlePrevMonth} style={{ padding: '5px 10px', border: 'none', background: 'transparent', borderRight: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                      <ChevronLeft size={14} className="inline-block align-middle shrink-0" style={{ fontSize: '12px' }} />
                     </button>
-                    <span style={{ padding: '8px 20px', fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', minWidth: '140px', textAlign: 'center' }}>{MONTHS[currentMonth]} {currentYear}</span>
-                    <button type="button" onClick={handleNextMonth} style={{ padding: '8px 16px', border: 'none', background: 'transparent', borderLeft: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                      <ChevronRight size={16} className="inline-block align-middle shrink-0" style={{ fontSize: '12px' }} />
+                    <span style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-main)', minWidth: '110px', textAlign: 'center' }}>{MONTHS[currentMonth]} {currentYear}</span>
+                    <button type="button" onClick={handleNextMonth} style={{ padding: '5px 10px', border: 'none', background: 'transparent', borderLeft: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                      <ChevronRight size={14} className="inline-block align-middle shrink-0" style={{ fontSize: '12px' }} />
                     </button>
-                    <button type="button" onClick={() => { setCurrentMonth(new Date().getMonth()); setCurrentYear(new Date().getFullYear()); }} style={{ padding: '8px 20px', border: 'none', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-card)', cursor: 'pointer', color: 'var(--text-main)', fontWeight: 500, fontSize: '13px' }}>Today</button>
+                    <button type="button" onClick={() => { setCurrentMonth(new Date().getMonth()); setCurrentYear(new Date().getFullYear()); }} style={{ padding: '5px 12px', border: 'none', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-card)', cursor: 'pointer', color: 'var(--text-main)', fontWeight: 500, fontSize: '12px' }}>Today</button>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0 12px', height: '36px', width: '200px' }}>
-                    <Search size={16} className="inline-block align-middle shrink-0" style={{ color: 'var(--text-muted)', fontSize: '13px', marginRight: '8px' }} />
-                    <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: '13px', width: '100%', background: 'transparent', color: 'var(--text-main)' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0 8px', height: '28px', width: '150px' }}>
+                    <Search size={13} className="inline-block align-middle shrink-0" style={{ color: 'var(--text-muted)', fontSize: '12px', marginRight: '6px' }} />
+                    <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: '12px', width: '100%', background: 'transparent', color: 'var(--text-main)' }} />
                   </div>
 
                   {can(currentUser, 'manageEmployees') && (
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       {showAddForm ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', border: '1px solid var(--accent-green-text)', borderRadius: '8px', padding: '4px', height: '36px' }}>
-                          <input type="text" placeholder="Employee Name" value={newEmployeeName} onChange={(e) => { setNewEmployeeName(e.target.value); setAddError(''); }} onKeyDown={(e) => e.key === 'Enter' && addEmployee()} autoFocus style={{ border: 'none', outline: 'none', padding: '0 8px', fontSize: '13px', width: '150px', color: 'var(--text-main)', background: 'transparent', height: '100%' }} />
-                          <button type="button" onClick={addEmployee} style={{ background: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 12px', height: '28px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-card)', border: '1px solid var(--accent-green-text)', borderRadius: '6px', padding: '2px', height: '28px' }}>
+                          <input type="text" placeholder="Employee Name" value={newEmployeeName} onChange={(e) => { setNewEmployeeName(e.target.value); setAddError(''); }} onKeyDown={(e) => e.key === 'Enter' && addEmployee()} autoFocus style={{ border: 'none', outline: 'none', padding: '0 6px', fontSize: '12px', width: '130px', color: 'var(--text-main)', background: 'transparent', height: '100%' }} />
+                          <button type="button" onClick={addEmployee} style={{ background: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 10px', height: '22px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
                           <button type="button" onClick={() => { setShowAddForm(false); setNewEmployeeName(''); setAddError(''); }} style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', padding: '0 4px', height: '100%' }}><X size={16} className="inline-block align-middle shrink-0" /></button>
                         </div>
                       ) : (
-                        <button type="button" onClick={() => setShowAddForm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '0 16px', height: '36px', backgroundColor: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                          <Plus size={16} className="inline-block align-middle shrink-0" /> Add Employee
+                        <button type="button" onClick={() => setShowAddForm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '0 12px', height: '28px', backgroundColor: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                          <Plus size={13} className="inline-block align-middle shrink-0" /> Add Employee
                         </button>
                       )}
                     </div>
@@ -399,7 +400,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
 
               {addError && <div style={{ backgroundColor: 'var(--accent-red)', color: 'var(--accent-red-text)', padding: '10px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 500, marginBottom: '16px' }}>{addError}</div>}
 
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '16px', fontSize: '12px', color: 'var(--text-muted)', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '14px', marginBottom: '10px', fontSize: '11px', color: 'var(--text-muted)', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--status-p-text)' }}></div> Present</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--status-a-text)' }}></div> Absent</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--status-l-text)' }}></div> Late</div>
@@ -409,31 +410,31 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
 
               {activeTab === 'register' && (
                 <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
-                  <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 320px)', position: 'relative' }}>
-                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: '900px', textAlign: 'left' }}>
+                  <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 280px)', position: 'relative' }}>
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: '700px', textAlign: 'left' }}>
                       <thead>
                         <tr>
                           {/* FIXED # HEADER */}
                           <th style={{ 
                             position: 'sticky', top: 0, left: 0, zIndex: 10, 
                             background: 'var(--bg-header)', 
-                            padding: '12px 0', 
+                            padding: '7px 0', 
                             borderBottom: '1px solid var(--border-color)', 
                             borderRight: '1px solid var(--border-color)', 
-                            width: '40px', minWidth: '40px', maxWidth: '40px', 
+                            width: '32px', minWidth: '32px', maxWidth: '32px', 
                             boxSizing: 'border-box',
-                            textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)' 
+                            textAlign: 'center', fontSize: '10px', color: 'var(--text-muted)' 
                           }}>#</th>
                           
                           {/* FIXED EMPLOYEE HEADER */}
                           <th style={{ 
-                            position: 'sticky', top: 0, left: '40px', zIndex: 10, 
+                            position: 'sticky', top: 0, left: '32px', zIndex: 10, 
                             background: 'var(--bg-header)', 
-                            padding: '12px 16px', 
+                            padding: '7px 12px', 
                             borderBottom: '1px solid var(--border-color)', 
                             borderRight: '2px solid var(--border-color)', 
-                            textAlign: 'left', fontSize: '11px', color: 'var(--text-muted)', 
-                            minWidth: '180px' 
+                            textAlign: 'left', fontSize: '10px', color: 'var(--text-muted)', 
+                            minWidth: '140px' 
                           }}>EMPLOYEE ({activeRoster.length})</th>
                           
                           {daysArray.map(day => {
@@ -444,13 +445,13 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                             else if (weekend) { headerBg = 'var(--bg-hover)'; dayTextColor = 'var(--text-muted)'; weekdayTextColor = 'var(--text-muted)'; }
 
                             return (
-                              <th key={day} title={holidayName || (weekend ? 'Weekend' : '')} style={{ position: 'sticky', top: 0, zIndex: 5, background: headerBg, padding: '8px 0', borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', textAlign: 'center', minWidth: '40px' }}>
-                                <div style={{ fontSize: '10px', color: weekdayTextColor, fontWeight: 500, marginBottom: '2px' }}>{getWeekday(day)}</div>
-                                <div style={{ fontSize: '13px', color: dayTextColor, fontWeight: 600 }}>{day}</div>
+                              <th key={day} title={holidayName || (weekend ? 'Weekend' : '')} style={{ position: 'sticky', top: 0, zIndex: 5, background: headerBg, padding: '4px 0', borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', textAlign: 'center', minWidth: '30px' }}>
+                                <div style={{ fontSize: '9px', color: weekdayTextColor, fontWeight: 500, marginBottom: '1px' }}>{getWeekday(day)}</div>
+                                <div style={{ fontSize: '11px', color: dayTextColor, fontWeight: 600 }}>{day}</div>
                               </th>
                             );
                           })}
-                          <th style={{ position: 'sticky', top: 0, right: 0, zIndex: 10, background: 'var(--bg-header)', padding: '12px 16px', borderBottom: '1px solid var(--border-color)', textAlign: 'right', fontSize: '11px', color: 'var(--text-muted)', minWidth: '80px' }}>TOTAL</th>
+                          <th style={{ position: 'sticky', top: 0, right: 0, zIndex: 10, background: 'var(--bg-header)', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', textAlign: 'right', fontSize: '10px', color: 'var(--text-muted)', minWidth: '60px' }}>TOTAL</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -462,24 +463,24 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                               background: 'var(--bg-card)', 
                               borderBottom: '1px solid var(--border-color)', 
                               borderRight: '1px solid var(--border-color)', 
-                              textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', 
-                              width: '40px', minWidth: '40px', maxWidth: '40px', 
+                              textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', 
+                              width: '32px', minWidth: '32px', maxWidth: '32px', 
                               boxSizing: 'border-box',
-                              padding: '10px 0'
+                              padding: '4px 0'
                             }}>{index + 1}</td>
                             
                             {/* FIXED EMPLOYEE BODY */}
                             <td style={{ 
-                              position: 'sticky', left: '40px', zIndex: 5, 
+                              position: 'sticky', left: '32px', zIndex: 5, 
                               background: 'var(--bg-card)', 
-                              padding: '12px 16px', 
+                              padding: '4px 12px', 
                               borderBottom: '1px solid var(--border-color)', 
                               borderRight: '2px solid var(--border-color)', 
-                              minWidth: '180px' 
+                              minWidth: '140px' 
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <img src={`https://ui-avatars.com/api/?name=${emp.name.replace(' ', '+')}&background=random`} alt={emp.name} style={{ width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0 }} />
-                                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-main)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={(e) => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); setEmployeeActionPopup({ employee: emp, x: rect.left + window.scrollX, y: rect.bottom + window.scrollY }); }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <img src={`https://ui-avatars.com/api/?name=${emp.name.replace(' ', '+')}&background=random`} alt={emp.name} style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0 }} />
+                                <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-main)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={(e) => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); setEmployeeActionPopup({ employee: emp, x: rect.left + window.scrollX, y: rect.bottom + window.scrollY }); }}>
                                   {emp.name}
                                 </span>
                               </div>
@@ -503,16 +504,16 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                               else if (status === 'off') { bg = 'var(--status-o-bg)'; dotColor = 'var(--status-o-text)'; }
 
                               return (
-                                <td key={day} onClick={(e) => { if (can(currentUser, 'markAttendance') && !isLocked) openPopup(e, emp.id, day); }} title={holidayName || (weekend ? 'Weekend' : '')} style={{ background: bg, padding: 0, borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', textAlign: 'center', cursor: !can(currentUser, 'markAttendance') || isLocked ? 'not-allowed' : 'pointer', height: '45px', position: 'relative' }}>
-                                  {status ? <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: dotColor, margin: '0 auto', display: dotDisplay }}></div> : <span style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 'bold' }}>-</span>}
-                                  {notes[`${emp.id}-${getDateKey(day)}`] && <span style={{ position: 'absolute', bottom: 2, left: '50%', transform: 'translateX(-50%)', fontSize: '9px' }}>📝</span>}
+                                <td key={day} onClick={(e) => { if (can(currentUser, 'markAttendance') && !isLocked) openPopup(e, emp.id, day); }} title={holidayName || (weekend ? 'Weekend' : '')} style={{ background: bg, padding: 0, borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', textAlign: 'center', cursor: !can(currentUser, 'markAttendance') || isLocked ? 'not-allowed' : 'pointer', height: '32px', position: 'relative' }}>
+                                  {status ? <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor, margin: '0 auto', display: dotDisplay }}></div> : <span style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>-</span>}
+                                  {notes[`${emp.id}-${getDateKey(day)}`] && <span style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', fontSize: '7px' }}>📝</span>}
                                 </td>
                               );
                             })}
 
-                            <td style={{ position: 'sticky', right: 0, zIndex: 5, background: 'var(--bg-header)', padding: '12px 16px', borderBottom: '1px solid var(--border-color)', textAlign: 'right', minWidth: '80px' }}>
-                              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>{getTotalWorkedDays(emp.id)}</span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>days</span>
+                            <td style={{ position: 'sticky', right: 0, zIndex: 5, background: 'var(--bg-header)', padding: '4px 10px', borderBottom: '1px solid var(--border-color)', textAlign: 'right', minWidth: '60px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main)' }}>{getTotalWorkedDays(emp.id)}</span>
+                              <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>days</span>
                             </td>
                           </tr>
                         ))}
@@ -566,22 +567,31 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
         </main>
       </div>
 
-      {popup && (
-        <div ref={popupRef} style={{ position: 'absolute', left: popup.x, top: popup.y, zIndex: 1000, background: 'var(--bg-card)', padding: '12px', borderRadius: '8px', boxShadow: '0 10px 25px var(--shadow-color)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '180px' }}>
-          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>Mark Day {popup.day}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <button type="button" onClick={() => markAttendance(popup.employeeId, popup.day, 'present', popupNote)} style={{ padding: '8px', borderRadius: '4px', border: 'none', background: 'var(--status-p-bg)', color: 'var(--status-p-text)', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>✓ Present</button>
-            <button type="button" onClick={() => markAttendance(popup.employeeId, popup.day, 'absent', popupNote)} style={{ padding: '8px', borderRadius: '4px', border: 'none', background: 'var(--status-a-bg)', color: 'var(--status-a-text)', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>✗ Absent</button>
-            <button type="button" onClick={() => markAttendance(popup.employeeId, popup.day, 'late', popupNote)} style={{ padding: '8px', borderRadius: '4px', border: 'none', background: 'var(--status-l-bg)', color: 'var(--status-l-text)', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>⏰ Late</button>
-            <button type="button" onClick={() => markAttendance(popup.employeeId, popup.day, 'early', popupNote)} style={{ padding: '8px', borderRadius: '4px', border: 'none', background: 'var(--status-e-bg)', color: 'var(--status-e-text)', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>🚪 Early Leave</button>
-            <button type="button" onClick={() => markAttendance(popup.employeeId, popup.day, 'off', popupNote)} style={{ padding: '8px', borderRadius: '4px', border: 'none', background: 'var(--status-o-bg)', color: 'var(--status-o-text)', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>📋 Off Duty</button>
+      {popup && (() => {
+        const opts = [
+          { key: 'present', label: '✓ Present', bg: 'var(--status-p-bg)', fg: 'var(--status-p-text)' },
+          { key: 'absent', label: '✗ Absent', bg: 'var(--status-a-bg)', fg: 'var(--status-a-text)' },
+          { key: 'late', label: '⏰ Late', bg: 'var(--status-l-bg)', fg: 'var(--status-l-text)' },
+          { key: 'early', label: '🚪 Early', bg: 'var(--status-e-bg)', fg: 'var(--status-e-text)' },
+          { key: 'off', label: '📋 Off Duty', bg: 'var(--status-o-bg)', fg: 'var(--status-o-text)' },
+        ];
+        const btn = { padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', fontWeight: 600, fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' };
+        return (
+          <div ref={popupRef} style={{ position: 'absolute', left: popup.x, top: popup.y, zIndex: 1000, background: 'var(--bg-card)', padding: '10px', borderRadius: '10px', boxShadow: '0 10px 25px var(--shadow-color)', border: '1px solid var(--border-color)', width: 'max-content', minWidth: 'min(440px, calc(100vw - 16px))', maxWidth: 'calc(100vw - 16px)', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {opts.map((o) => (
+                <button key={o.key} type="button" onClick={() => markAttendance(popup.employeeId, popup.day, o.key, popupNote)} style={{ ...btn, background: o.bg, color: o.fg }}>{o.label}</button>
+              ))}
+              {can(currentUser, 'clearAttendance') && (
+                <button type="button" onClick={() => handleClearConfirm(popup.employeeId, popup.day)} style={{ ...btn, background: 'var(--status-a-bg)', color: 'var(--status-a-text)' }}>🗑️ Clear</button>
+              )}
+            </div>
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+              <input type="text" placeholder="Add a note (e.g., Doctor's appointment)" value={popupNote} onChange={(e) => setPopupNote(e.target.value)} style={{ width: '100%', padding: '6px 10px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)', borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
           </div>
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
-            <input type="text" placeholder="Add a note..." value={popupNote} onChange={(e) => setPopupNote(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
-          </div>
-          {can(currentUser, 'clearAttendance') && <button type="button" onClick={() => handleClearConfirm(popup.employeeId, popup.day)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--status-a-text)', background: 'transparent', color: 'var(--status-a-text)', fontWeight: 600, cursor: 'pointer', textAlign: 'center', marginTop: '4px' }}>🗑️ Clear Mark</button>}
-        </div>
-      )}
+        );
+      })()}
 
       {employeeActionPopup && (
         <div ref={employeePopupRef} style={{ position: 'absolute', left: employeeActionPopup.x, top: employeeActionPopup.y, zIndex: 1000, background: 'var(--bg-card)', borderRadius: '8px', boxShadow: '0 10px 25px var(--shadow-color)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', minWidth: '160px', overflow: 'hidden' }}>

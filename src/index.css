@@ -41,7 +41,7 @@
   --accent-yellow-text: #f29900;
   --accent-blue: #e8f0fe;
   --accent-blue-text: #1a73e8;
-  --header-height: 60px;
+  --header-height: 48px;
 
   /* Aliases used by Tailwind-style classes in modals */
   --accent: #0f9d58;
@@ -144,7 +144,7 @@ body {
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
-  padding: 20px;
+  padding: 0;
   transition: background-color 0.3s;
 }
 
@@ -158,14 +158,15 @@ body {
 
 .app-container {
   width: 100%;
-  max-width: 1400px;
-  height: calc(100vh - 40px);
-  max-height: 900px;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  max-height: none;
   background-color: var(--bg-body);
   display: flex;
-  border-radius: 12px;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 20px 50px var(--shadow-color);
+  box-shadow: none;
   position: relative;
   transition: background-color 0.3s;
 }
@@ -194,7 +195,7 @@ body {
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  padding-top: 50px;
+  padding-top: 16px;
   transition: margin-left 0.3s ease, left 0.3s ease, background-color 0.3s;
   z-index: 100;
 }
@@ -214,7 +215,7 @@ body {
 .nav-menu { list-style: none; flex: 1; overflow-y: auto; }
 
 .nav-section {
-  padding: 15px 20px 5px;
+  padding: 10px 16px 4px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
@@ -224,12 +225,12 @@ body {
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 10px 20px;
+  padding: 7px 16px;
   color: var(--text-main);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  gap: 12px;
+  gap: 10px;
   transition: all 0.2s;
   cursor: pointer;
 }
@@ -310,12 +311,12 @@ body {
 /* =========================================
    TABLES & COMMON UI
    ========================================= */
-.page-content { padding: 25px; overflow-y: auto; flex: 1; }
+.page-content { padding: 16px; overflow-y: auto; flex: 1; }
 
 @layer base {
   table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 900px; }
   th, td {
-    padding: 10px 8px;
+    padding: 6px 8px;
     border-bottom: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
     font-size: 13px;
@@ -341,15 +342,4 @@ body {
   .sidebar { position: fixed; top: 0; bottom: 0; left: -260px; z-index: 1000; padding-top: 20px; margin-left: 0 !important; }
   .sidebar.open { left: 0; }
   .sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; backdrop-filter: blur(2px); }
-}
-/* =========================================
-   HEADER LOGO ANIMATION
-   ========================================= */
-.header-logo {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-5px); }
-  to { opacity: 1; transform: translateX(0); }
 }

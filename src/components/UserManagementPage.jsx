@@ -7,20 +7,20 @@ import { UserPlus, Trash2, KeyRound, Save } from 'lucide-react';
 
 const credRef = () => doc(db, 'users', 'credentials');
 
-const card = { background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px', marginBottom: '20px' };
-const input = { width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', color: 'var(--text-main)', background: 'var(--bg-input)', outline: 'none' };
-const label = { display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' };
-const primaryBtn = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 16px', border: 'none', borderRadius: '6px', background: 'var(--accent-green-text)', color: '#fff', fontWeight: 600, fontSize: '13px', cursor: 'pointer' };
-const ghostBtn = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'transparent', color: 'var(--text-main)', fontSize: '12px', cursor: 'pointer' };
+const card = { background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '15px', marginBottom: '15px' };
+const input = { width: '100%', padding: '8px 9px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', color: 'var(--text-main)', background: 'var(--bg-input)', outline: 'none' };
+const label = { display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' };
+const primaryBtn = { display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '7px 12px', border: 'none', borderRadius: '6px', background: 'var(--accent-green-text)', color: '#fff', fontWeight: 600, fontSize: '11px', cursor: 'pointer' };
+const ghostBtn = { display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 9px', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'transparent', color: 'var(--text-main)', fontSize: '11px', cursor: 'pointer' };
 
 function PermissionChecks({ value, onChange, disabled }) {
   const toggle = (key) => onChange(value.includes(key) ? value.filter((k) => k !== key) : [...value, key]);
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '8px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '6px' }}>
       {PERMISSIONS.map((p) => (
-        <label key={p.key} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '13px', color: 'var(--text-main)', opacity: disabled ? 0.6 : 1, cursor: disabled ? 'default' : 'pointer' }}>
+        <label key={p.key} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', fontSize: '11px', color: 'var(--text-main)', opacity: disabled ? 0.6 : 1, cursor: disabled ? 'default' : 'pointer' }}>
           <input type="checkbox" disabled={disabled} checked={disabled || value.includes(p.key)} onChange={() => toggle(p.key)} style={{ marginTop: '3px' }} />
-          <span><strong>{p.label}</strong><br /><span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{p.desc}</span></span>
+          <span><strong>{p.label}</strong><br /><span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{p.desc}</span></span>
         </label>
       ))}
     </div>
@@ -119,20 +119,20 @@ export default function UserManagementPage({ currentUser }) {
     } catch (err) { flash('error', 'Failed to save: ' + err.message); }
   };
 
-  if (loading) return <div style={{ padding: '30px', color: 'var(--text-muted)' }}>Loading users…</div>;
+  if (loading) return <div style={{ padding: '22px', color: 'var(--text-muted)' }}>Loading users…</div>;
 
   return (
-    <div style={{ padding: '25px', maxWidth: '900px' }}>
-      <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>User Management</h2>
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>Create logins and choose exactly what each person can do. Admins can do everything.</p>
+    <div style={{ padding: '19px', maxWidth: '900px' }}>
+      <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>User Management</h2>
+      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>Create logins and choose exactly what each person can do. Admins can do everything.</p>
 
       {msg.text && (
-        <div style={{ padding: '10px 14px', borderRadius: '6px', marginBottom: '16px', fontSize: '13px', background: msg.type === 'error' ? 'var(--status-a-bg)' : 'var(--status-p-bg)', color: msg.type === 'error' ? 'var(--status-a-text)' : 'var(--status-p-text)', border: `1px solid ${msg.type === 'error' ? 'var(--status-a-text)' : 'var(--status-p-text)'}` }}>{msg.text}</div>
+        <div style={{ padding: '8px 10px', borderRadius: '6px', marginBottom: '12px', fontSize: '11px', background: msg.type === 'error' ? 'var(--status-a-bg)' : 'var(--status-p-bg)', color: msg.type === 'error' ? 'var(--status-a-text)' : 'var(--status-p-text)', border: `1px solid ${msg.type === 'error' ? 'var(--status-a-text)' : 'var(--status-p-text)'}` }}>{msg.text}</div>
       )}
 
       <form onSubmit={addUser} style={card}>
-        <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}><UserPlus size={16} /> Add user</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+        <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}><UserPlus size={16} /> Add user</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '9px', marginBottom: '10px' }}>
           <div><span style={label}>Full name</span><input style={input} value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} /></div>
           <div><span style={label}>Username</span><input style={input} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} autoComplete="off" /></div>
           <div><span style={label}>Password</span><input style={input} type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="off" /></div>
@@ -145,7 +145,7 @@ export default function UserManagementPage({ currentUser }) {
         </div>
         <span style={label}>Permissions</span>
         <PermissionChecks value={form.permissions} disabled={form.role === 'admin'} onChange={(permissions) => setForm({ ...form, permissions })} />
-        <div style={{ marginTop: '16px' }}><button type="submit" style={primaryBtn}><UserPlus size={14} /> Create user</button></div>
+        <div style={{ marginTop: '12px' }}><button type="submit" style={primaryBtn}><UserPlus size={14} /> Create user</button></div>
       </form>
 
       {users.map((u) => {
@@ -156,12 +156,12 @@ export default function UserManagementPage({ currentUser }) {
         const setDraft = (patch) => setDrafts((p) => ({ ...p, [u.username]: { role, permissions, ...p[u.username], ...patch } }));
         return (
           <div key={u.username} style={card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '9px' }}>
               <div>
-                <strong style={{ color: 'var(--text-main)', fontSize: '14px' }}>{u.fullName}</strong>{' '}
-                <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>@{u.username}{isSelf ? ' (you)' : ''}</span>
+                <strong style={{ color: 'var(--text-main)', fontSize: '12px' }}>{u.fullName}</strong>{' '}
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>@{u.username}{isSelf ? ' (you)' : ''}</span>
               </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <select style={{ ...input, width: 'auto' }} value={role} onChange={(e) => setDraft({ role: e.target.value })}>
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
@@ -171,7 +171,7 @@ export default function UserManagementPage({ currentUser }) {
               </div>
             </div>
             <PermissionChecks value={permissions} disabled={role === 'admin'} onChange={(p) => setDraft({ permissions: p })} />
-            {d && <div style={{ marginTop: '14px' }}><button type="button" style={primaryBtn} onClick={() => saveAccess(u.username)}><Save size={14} /> Save changes</button></div>}
+            {d && <div style={{ marginTop: '10px' }}><button type="button" style={primaryBtn} onClick={() => saveAccess(u.username)}><Save size={14} /> Save changes</button></div>}
           </div>
         );
       })}

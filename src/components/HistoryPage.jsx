@@ -56,32 +56,32 @@ function HistoryPage({ history }) {
   };
 
   return (
-    <div style={{ padding: '25px', height: '100%', overflowY: 'auto', backgroundColor: 'var(--bg-body)' }}>
+    <div style={{ padding: '19px', height: '100%', overflowY: 'auto', backgroundColor: 'var(--bg-body)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 style={{ fontSize: '21px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Clock color="var(--accent-green-text)" size={28} />
             History & Logs
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>View all attendance changes and edits</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px' }}>View all attendance changes and edits</p>
         </div>
-        <div style={{ fontSize: '13px', color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px' }}>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '6px 12px' }}>
           Total Entries: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{filteredHistory.length}</span>
         </div>
       </div>
 
       {/* Filters */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', marginBottom: '18px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '9px' }}>
         <div style={{ position: 'relative' }}>
           <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input type="text" placeholder="Search employee..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }} />
+            style={{ width: '100%', padding: '6px 9px 6px 27px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', outline: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }} />
         </div>
         <div style={{ position: 'relative' }}>
           <Filter size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', outline: 'none', appearance: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}>
+            style={{ width: '100%', padding: '6px 9px 6px 27px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', outline: 'none', appearance: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}>
             {statuses.map((status) => (
               <option key={status} value={status}>{status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1)}</option>
             ))}
@@ -91,11 +91,11 @@ function HistoryPage({ history }) {
         <div style={{ position: 'relative' }}>
           <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input type="month" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }} />
+            style={{ width: '100%', padding: '6px 9px 6px 27px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', outline: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }} />
         </div>
         <div style={{ position: 'relative' }}>
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', outline: 'none', appearance: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}>
+            style={{ width: '100%', padding: '6px 9px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', outline: 'none', appearance: 'none', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}>
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
             <option value="employee">Sort by Employee</option>
@@ -107,32 +107,32 @@ function HistoryPage({ history }) {
       {/* History Table */}
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
             <thead style={{ background: 'var(--bg-header)', borderBottom: '1px solid var(--border-color)' }}>
               <tr>
                 {['Time', 'Employee', 'Date', 'Status', 'Editor', 'Note'].map((head) => (
-                  <th key={head} style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>{head}</th>
+                  <th key={head} style={{ textAlign: 'left', padding: '9px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>{head}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filteredHistory.length === 0 ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>No history entries found.</td></tr>
+                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No history entries found.</td></tr>
               ) : (
                 filteredHistory.map((entry, idx) => {
                   const style = getStatusStyle(entry.status);
                   return (
                     <tr key={entry.id || idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>{formatTime(entry.editedAt)}</td>
-                      <td style={{ padding: '12px', fontWeight: 500, color: 'var(--text-main)' }}>{entry.employeeName || 'Unknown'}</td>
-                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{formatDate(entry.date)}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, color: style.color, background: style.bg }}>
+                      <td style={{ padding: '9px', color: 'var(--text-muted)', fontSize: '11px' }}>{formatTime(entry.editedAt)}</td>
+                      <td style={{ padding: '9px', fontWeight: 500, color: 'var(--text-main)' }}>{entry.employeeName || 'Unknown'}</td>
+                      <td style={{ padding: '9px', color: 'var(--text-muted)' }}>{formatDate(entry.date)}</td>
+                      <td style={{ padding: '9px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 600, color: style.color, background: style.bg }}>
                           {style.icon} {entry.status || '—'}
                         </span>
                       </td>
-                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{entry.editor || 'System'}</td>
-                      <td title={entry.note || ''} style={{ padding: '12px', color: 'var(--text-muted)', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.note || '—'}</td>
+                      <td style={{ padding: '9px', color: 'var(--text-muted)' }}>{entry.editor || 'System'}</td>
+                      <td title={entry.note || ''} style={{ padding: '9px', color: 'var(--text-muted)', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.note || '—'}</td>
                     </tr>
                   );
                 })

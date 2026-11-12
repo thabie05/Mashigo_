@@ -243,24 +243,24 @@ function EmailReportsPage({ employees, attendance, currentUser }) {
   const endDisplay = formatDateDisplay(endDate);
 
   return (
-    <div style={{ padding: '25px', height: '100%', overflowY: 'auto', backgroundColor: 'var(--bg-body)' }}>
+    <div style={{ padding: '19px', height: '100%', overflowY: 'auto', backgroundColor: 'var(--bg-body)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '18px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 style={{ fontSize: '21px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Mail color="var(--accent-green-text)" size={28} /> Email Reports
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>Generate and send attendance reports</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px' }}>Generate and send attendance reports</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '6px', borderRadius: '6px' }}>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ border: '1px solid var(--border-color)', borderRadius: '4px', padding: '4px 8px', fontSize: '13px', color: 'var(--text-main)', backgroundColor: 'var(--bg-input)', outline: 'none' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '4px', borderRadius: '6px' }}>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ border: '1px solid var(--border-color)', borderRadius: '4px', padding: '4px 6px', fontSize: '11px', color: 'var(--text-main)', backgroundColor: 'var(--bg-input)', outline: 'none' }} />
           <span style={{ color: 'var(--text-muted)' }}>—</span>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ border: '1px solid var(--border-color)', borderRadius: '4px', padding: '4px 8px', fontSize: '13px', color: 'var(--text-main)', backgroundColor: 'var(--bg-input)', outline: 'none' }} />
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ border: '1px solid var(--border-color)', borderRadius: '4px', padding: '4px 6px', fontSize: '11px', color: 'var(--text-main)', backgroundColor: 'var(--bg-input)', outline: 'none' }} />
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '9px', marginBottom: '18px' }}>
         {[
           { label: 'Employees', value: employees.length, icon: <Users size={18} color="var(--accent-green-text)" /> },
           { label: 'Present', value: totals.present, icon: <UserCheck size={18} color="var(--status-p-text)" /> },
@@ -269,50 +269,50 @@ function EmailReportsPage({ employees, attendance, currentUser }) {
           { label: 'Absent', value: totals.absent, icon: <UserX size={18} color="var(--status-a-text)" /> },
           { label: 'Total Entries', value: totals.total, icon: <BarChart3 size={18} color="var(--text-muted)" /> }
         ].map((stat, i) => (
-          <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
-            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>{stat.icon}</div>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>{stat.label}</p>
-            <p style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-main)' }}>{stat.value}</p>
+          <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+            <div style={{ marginBottom: '6px', display: 'flex', justifyContent: 'center' }}>{stat.icon}</div>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>{stat.label}</p>
+            <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)' }}>{stat.value}</p>
           </div>
         ))}
       </div>
 
       {/* Employee Table */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', marginBottom: '24px' }}>
-        <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', marginBottom: '18px' }}>
+        <div style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '9px' }}>
+          <h2 style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <FileText size={16} color="var(--accent-green-text)" /> Employee Breakdown
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>({reportRows.length} employees)</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>({reportRows.length} employees)</span>
           </h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={handleCopyReport} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-main)' }}><Copy size={14} /> Copy</button>
-            <button onClick={handleDownloadCSV} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-main)' }}><Download size={14} /> CSV</button>
-            <button onClick={handleDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-main)' }}><Printer size={14} /> PDF</button>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button onClick={handleCopyReport} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 9px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-main)' }}><Copy size={14} /> Copy</button>
+            <button onClick={handleDownloadCSV} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 9px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-main)' }}><Download size={14} /> CSV</button>
+            <button onClick={handleDownloadPDF} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 9px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-main)' }}><Printer size={14} /> PDF</button>
           </div>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
             <thead style={{ background: 'var(--bg-header)', borderBottom: '1px solid var(--border-color)' }}>
               <tr>
-                <th style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Employee</th>
-                <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: 'var(--status-p-text)', fontSize: '11px', textTransform: 'uppercase' }}>Present</th>
-                <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: 'var(--status-l-text)', fontSize: '11px', textTransform: 'uppercase' }}>Late</th>
-                <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: 'var(--status-e-text)', fontSize: '11px', textTransform: 'uppercase' }}>Early</th>
-                <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: 'var(--status-a-text)', fontSize: '11px', textTransform: 'uppercase' }}>Absent</th>
-                <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Off</th>
-                <th style={{ textAlign: 'center', padding: '12px', fontWeight: 600, color: 'var(--accent-green-text)', fontSize: '11px', textTransform: 'uppercase' }}>Total</th>
+                <th style={{ textAlign: 'left', padding: '9px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>Employee</th>
+                <th style={{ textAlign: 'center', padding: '9px', fontWeight: 600, color: 'var(--status-p-text)', fontSize: '10px', textTransform: 'uppercase' }}>Present</th>
+                <th style={{ textAlign: 'center', padding: '9px', fontWeight: 600, color: 'var(--status-l-text)', fontSize: '10px', textTransform: 'uppercase' }}>Late</th>
+                <th style={{ textAlign: 'center', padding: '9px', fontWeight: 600, color: 'var(--status-e-text)', fontSize: '10px', textTransform: 'uppercase' }}>Early</th>
+                <th style={{ textAlign: 'center', padding: '9px', fontWeight: 600, color: 'var(--status-a-text)', fontSize: '10px', textTransform: 'uppercase' }}>Absent</th>
+                <th style={{ textAlign: 'center', padding: '9px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>Off</th>
+                <th style={{ textAlign: 'center', padding: '9px', fontWeight: 600, color: 'var(--accent-green-text)', fontSize: '10px', textTransform: 'uppercase' }}>Total</th>
               </tr>
             </thead>
             <tbody>
               {reportRows.map((row, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '12px', fontWeight: 500, color: 'var(--text-main)' }}>{row.name}</td>
-                  <td style={{ textAlign: 'center', padding: '12px', color: 'var(--status-p-text)', fontWeight: 600 }}>{row.present}</td>
-                  <td style={{ textAlign: 'center', padding: '12px', color: 'var(--status-l-text)', fontWeight: 600 }}>{row.late}</td>
-                  <td style={{ textAlign: 'center', padding: '12px', color: 'var(--status-e-text)', fontWeight: 600 }}>{row.early}</td>
-                  <td style={{ textAlign: 'center', padding: '12px', color: 'var(--status-a-text)', fontWeight: 600 }}>{row.absent}</td>
-                  <td style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{row.off}</td>
-                  <td style={{ textAlign: 'center', padding: '12px', color: 'var(--text-main)', fontWeight: 700 }}>{row.total}</td>
+                  <td style={{ padding: '9px', fontWeight: 500, color: 'var(--text-main)' }}>{row.name}</td>
+                  <td style={{ textAlign: 'center', padding: '9px', color: 'var(--status-p-text)', fontWeight: 600 }}>{row.present}</td>
+                  <td style={{ textAlign: 'center', padding: '9px', color: 'var(--status-l-text)', fontWeight: 600 }}>{row.late}</td>
+                  <td style={{ textAlign: 'center', padding: '9px', color: 'var(--status-e-text)', fontWeight: 600 }}>{row.early}</td>
+                  <td style={{ textAlign: 'center', padding: '9px', color: 'var(--status-a-text)', fontWeight: 600 }}>{row.absent}</td>
+                  <td style={{ textAlign: 'center', padding: '9px', color: 'var(--text-muted)', fontWeight: 600 }}>{row.off}</td>
+                  <td style={{ textAlign: 'center', padding: '9px', color: 'var(--text-main)', fontWeight: 700 }}>{row.total}</td>
                 </tr>
               ))}
             </tbody>
@@ -321,25 +321,25 @@ function EmailReportsPage({ employees, attendance, currentUser }) {
       </div>
 
       {/* Send Email Section */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '24px' }}>
-        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '18px' }}>
+        <h2 style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Send size={16} color="var(--accent-green-text)" /> Send Report via Email
         </h2>
-        <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>Recipient Email</label>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>Recipient Email</label>
             <input type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="hr@bmashilo.com" required
-              style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '13px', color: 'var(--text-main)', backgroundColor: 'var(--bg-input)', outline: 'none' }} />
+              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', color: 'var(--text-main)', backgroundColor: 'var(--bg-input)', outline: 'none' }} />
           </div>
-          <div style={{ background: 'var(--bg-body)', borderRadius: '6px', padding: '12px', fontSize: '13px', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}>
+          <div style={{ background: 'var(--bg-body)', borderRadius: '6px', padding: '9px', fontSize: '11px', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}>
             <p style={{ fontWeight: 600, marginBottom: '4px' }}>📋 Report Preview</p>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 2px 0' }}>Period: <strong>{startDisplay}</strong> – <strong>{endDisplay}</strong></p>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Employees: {employees.length} &nbsp;|&nbsp; Total Entries: {totals.total}</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 2px 0' }}>Period: <strong>{startDisplay}</strong> – <strong>{endDisplay}</strong></p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>Employees: {employees.length} &nbsp;|&nbsp; Total Entries: {totals.total}</p>
           </div>
-          {error && <p style={{ color: 'var(--status-a-text)', fontSize: '13px', background: 'var(--status-a-bg)', padding: '8px 12px', borderRadius: '6px', margin: 0 }}>{error}</p>}
-          {success && <p style={{ color: 'var(--status-p-text)', fontSize: '13px', background: 'var(--status-p-bg)', padding: '8px 12px', borderRadius: '6px', margin: 0 }}>{success}</p>}
+          {error && <p style={{ color: 'var(--status-a-text)', fontSize: '11px', background: 'var(--status-a-bg)', padding: '6px 9px', borderRadius: '6px', margin: 0 }}>{error}</p>}
+          {success && <p style={{ color: 'var(--status-p-text)', fontSize: '11px', background: 'var(--status-p-bg)', padding: '6px 9px', borderRadius: '6px', margin: 0 }}>{success}</p>}
           
-          <button type="submit" disabled={sending} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.7 : 1 }}>
+          <button type="submit" disabled={sending} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px', background: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.7 : 1 }}>
             {sending ? 'Sending...' : <><Send size={18} /> Send Report</>}
           </button>
         </form>
