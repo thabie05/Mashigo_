@@ -52,6 +52,8 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('register');
 
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
   const popupRef = useRef(null);
   const employeePopupRef = useRef(null);
   const closedStaleShiftsRef = useRef(false);
@@ -101,6 +103,15 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     if (popup || employeeActionPopup) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [popup, employeeActionPopup]);
+
+  useEffect(() => {
+    if (!showUserMenu) return;
+    const close = (e) => { if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false); };
+    const esc = (e) => { if (e.key === 'Escape') setShowUserMenu(false); };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc); };
+  }, [showUserMenu]);
 
   const handleNavClick = (page) => { setActivePage(page); if (window.innerWidth <= 1024) setIsSidebarOpen(false); };
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -303,16 +314,6 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
             <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); setIsSidebarOpen(false); window.location.assign(`${window.location.origin}${window.location.pathname}?kiosk=1`); }}>
               <Fingerprint size={16} className="inline-block align-middle shrink-0" /> Kiosk Mode
             </a>
-            
-            <li className="nav-section">System</li>
-            {currentUser.role === 'admin' && (
-              <a href="#" className={`nav-item ${activePage === 'users' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleNavClick('users'); }}>
-                <Users size={16} className="inline-block align-middle shrink-0" /> Users &amp; Access
-              </a>
-            )}
-            <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); toggleTheme(); }}><Moon size={16} className="inline-block align-middle shrink-0" /> Toggle Dark Mode</a>
-            <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); setShowPasswordModal(true); setIsSidebarOpen(false); }}><Lock size={16} className="inline-block align-middle shrink-0" /> Password</a>
-            <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); onLogout(); }}><LogOut size={16} className="inline-block align-middle shrink-0" /> Logout</a>
           </ul>
         </aside>
 
@@ -343,9 +344,31 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
             
             {/* Right Side: Actions (Always Visible) */}
             <div className="header-actions" style={{ marginLeft: 'auto', zIndex: 2 }}>
-              <div className="user-profile">
-                <img src={`https://ui-avatars.com/api/?name=${currentUser.fullName.replace(' ', '+')}&background=random`} alt="User" />
-                <span className="hide-mobile">{currentUser.fullName} {currentUser.role === 'admin' && <span>(Admin)</span>}</span>
+              <div ref={userMenuRef} style={{ position: 'relative' }}>
+                <button type="button" className="user-profile" onClick={() => setShowUserMenu((v) => !v)} aria-haspopup="menu" aria-expanded={showUserMenu} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-main)' }}>
+                  <img src={`https://ui-avatars.com/api/?name=${currentUser.fullName.replace(' ', '+')}&background=random`} alt="User" />
+                  <span className="hide-mobile">{currentUser.fullName} {currentUser.role === 'admin' && <span>(Admin)</span>}</span>
+                  <ChevronDown size={14} style={{ transition: 'transform 0.15s', transform: showUserMenu ? 'rotate(180deg)' : 'none', color: 'var(--text-muted)' }} />
+                </button>
+                {showUserMenu && (
+                  <div role="menu" className="dropdown-menu-anim" style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', minWidth: '200px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 10px 25px var(--shadow-color)', padding: '4px 0', zIndex: 1500 }}>
+                    {currentUser.role === 'admin' && (
+                      <button type="button" role="menuitem" onClick={() => { setShowUserMenu(false); handleNavClick('users'); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 14px', border: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                        <Users size={16} className="shrink-0" /> Users &amp; Access
+                      </button>
+                    )}
+                    <button type="button" role="menuitem" onClick={() => { toggleTheme(); setShowUserMenu(false); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 14px', border: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      <Moon size={16} className="shrink-0" /> Toggle Dark Mode
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => { setShowUserMenu(false); setShowPasswordModal(true); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 14px', border: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      <Lock size={16} className="shrink-0" /> Password
+                    </button>
+                    <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
+                    <button type="button" role="menuitem" onClick={() => { setShowUserMenu(false); onLogout(); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 14px', border: 'none', background: 'transparent', color: 'var(--status-a-text)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      <LogOut size={16} className="shrink-0" /> Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </header>
@@ -358,24 +381,24 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
             <div className="page-content" style={{ padding: '14px', backgroundColor: 'var(--bg-body)' }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
-                  <button onClick={() => setActiveTab('register')} style={{ padding: '5px 12px', fontSize: '12px', border: 'none', background: activeTab === 'register' ? 'var(--bg-hover)' : 'none', fontWeight: 500, color: activeTab === 'register' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Register</button>
-                  <button onClick={() => setActiveTab('summary')} style={{ padding: '5px 12px', fontSize: '12px', border: 'none', background: activeTab === 'summary' ? 'var(--bg-hover)' : 'none', fontWeight: 500, color: activeTab === 'summary' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Summary</button>
+                <div style={{ display: 'flex', alignItems: 'stretch', height: '30px', boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
+                  <button onClick={() => setActiveTab('register')} style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: '12px', border: 'none', background: activeTab === 'register' ? 'var(--bg-hover)' : 'none', fontWeight: 500, color: activeTab === 'register' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Register</button>
+                  <button onClick={() => setActiveTab('summary')} style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: '12px', border: 'none', background: activeTab === 'summary' ? 'var(--bg-hover)' : 'none', fontWeight: 500, color: activeTab === 'summary' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer' }}>Summary</button>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'var(--bg-card)', overflow: 'hidden' }}>
-                    <button type="button" onClick={handlePrevMonth} style={{ padding: '5px 10px', border: 'none', background: 'transparent', borderRight: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                  <div style={{ display: 'flex', alignItems: 'stretch', height: '30px', boxSizing: 'border-box', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'var(--bg-card)', overflow: 'hidden' }}>
+                    <button type="button" onClick={handlePrevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px', border: 'none', background: 'transparent', borderRight: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-muted)' }}>
                       <ChevronLeft size={14} className="inline-block align-middle shrink-0" style={{ fontSize: '12px' }} />
                     </button>
-                    <span style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-main)', minWidth: '110px', textAlign: 'center' }}>{MONTHS[currentMonth]} {currentYear}</span>
-                    <button type="button" onClick={handleNextMonth} style={{ padding: '5px 10px', border: 'none', background: 'transparent', borderLeft: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-main)', minWidth: '110px', textAlign: 'center' }}>{MONTHS[currentMonth]} {currentYear}</span>
+                    <button type="button" onClick={handleNextMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px', border: 'none', background: 'transparent', borderLeft: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-muted)' }}>
                       <ChevronRight size={14} className="inline-block align-middle shrink-0" style={{ fontSize: '12px' }} />
                     </button>
-                    <button type="button" onClick={() => { setCurrentMonth(new Date().getMonth()); setCurrentYear(new Date().getFullYear()); }} style={{ padding: '5px 12px', border: 'none', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-card)', cursor: 'pointer', color: 'var(--text-main)', fontWeight: 500, fontSize: '12px' }}>Today</button>
+                    <button type="button" onClick={() => { setCurrentMonth(new Date().getMonth()); setCurrentYear(new Date().getFullYear()); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 12px', border: 'none', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-card)', cursor: 'pointer', color: 'var(--text-main)', fontWeight: 500, fontSize: '12px' }}>Today</button>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0 8px', height: '28px', width: '150px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0 8px', height: '30px', boxSizing: 'border-box', width: '150px' }}>
                     <Search size={13} className="inline-block align-middle shrink-0" style={{ color: 'var(--text-muted)', fontSize: '12px', marginRight: '6px' }} />
                     <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: '12px', width: '100%', background: 'transparent', color: 'var(--text-main)' }} />
                   </div>
@@ -383,13 +406,13 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                   {can(currentUser, 'manageEmployees') && (
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       {showAddForm ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-card)', border: '1px solid var(--accent-green-text)', borderRadius: '6px', padding: '2px', height: '28px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-card)', border: '1px solid var(--accent-green-text)', borderRadius: '6px', padding: '2px', height: '30px', boxSizing: 'border-box' }}>
                           <input type="text" placeholder="Employee Name" value={newEmployeeName} onChange={(e) => { setNewEmployeeName(e.target.value); setAddError(''); }} onKeyDown={(e) => e.key === 'Enter' && addEmployee()} autoFocus style={{ border: 'none', outline: 'none', padding: '0 6px', fontSize: '12px', width: '130px', color: 'var(--text-main)', background: 'transparent', height: '100%' }} />
-                          <button type="button" onClick={addEmployee} style={{ background: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 10px', height: '22px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                          <button type="button" onClick={addEmployee} style={{ background: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 10px', height: '24px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
                           <button type="button" onClick={() => { setShowAddForm(false); setNewEmployeeName(''); setAddError(''); }} style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', padding: '0 4px', height: '100%' }}><X size={16} className="inline-block align-middle shrink-0" /></button>
                         </div>
                       ) : (
-                        <button type="button" onClick={() => setShowAddForm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '0 12px', height: '28px', backgroundColor: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                        <button type="button" onClick={() => setShowAddForm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '0 12px', height: '30px', boxSizing: 'border-box', backgroundColor: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                           <Plus size={13} className="inline-block align-middle shrink-0" /> Add Employee
                         </button>
                       )}

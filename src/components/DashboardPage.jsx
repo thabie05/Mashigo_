@@ -57,7 +57,7 @@ export default function DashboardPage({ employees, attendance, history, currentM
         </div>
 
         <div style={{ background: 'var(--bg-card)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ background: 'var(--accent-green)', padding: '9px', borderRadius: '50%', color: 'var(--accent-green-text)' }}><UserCheck size={24} /></div>
+          <div style={{ background: 'var(--status-p-bg)', padding: '9px', borderRadius: '50%', color: 'var(--status-p-text)' }}><UserCheck size={24} /></div>
           <div>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Total Present</p>
             <p style={{ fontSize: '21px', fontWeight: 700, color: 'var(--text-main)' }}>{stats.totalPresent}</p>
@@ -97,7 +97,7 @@ export default function DashboardPage({ employees, attendance, history, currentM
                   contentStyle={{ backgroundColor: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                 />
                 <Bar dataKey="total" name="Total Staff" fill="var(--border-color)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="present" name="Present" fill="var(--accent-green-text)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="present" name="Present" fill="var(--status-p-text)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
