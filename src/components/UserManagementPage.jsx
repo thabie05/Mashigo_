@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { loadUsers, USERS_STORAGE_KEY } from '../data/users';
 import { PERMISSIONS, DEFAULT_USER_PERMISSIONS } from '../data/permissions';
+import ConfirmModal from './ConfirmModal';
 import { UserPlus, Trash2, KeyRound, Save } from 'lucide-react';
 
 const credRef = () => doc(db, 'users', 'credentials');
@@ -32,6 +33,9 @@ export default function UserManagementPage({ currentUser }) {
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [form, setForm] = useState({ fullName: '', username: '', password: '', role: 'user', permissions: [...DEFAULT_USER_PERMISSIONS] });
+  const [confirmDelete, setConfirmDelete] = useState(null); // username awaiting confirmation
+  const [resetTarget, setResetTarget] = useState(null); // username whose password is being reset
+  const [resetPw, setResetPw] = useState('');
   const [drafts, setDrafts] = useState({}); // username -> edited { role, permissions }
 
   const flash = (type, text) => { setMsg({ type, text }); setTimeout(() => setMsg({ type: '', text: '' }), 4000); };
@@ -94,19 +98,20 @@ export default function UserManagementPage({ currentUser }) {
     } catch (err) { flash('error', 'Failed to save: ' + err.message); }
   };
 
-  const resetPassword = async (username) => {
-    const pw = window.prompt(`New password for "${username}" (min 4 characters):`);
-    if (pw === null) return;
+  const resetPassword = async () => {
+    const username = resetTarget;
+    const pw = resetPw.trim();
     if (pw.length < 4) return flash('error', 'Password must be at least 4 characters.');
     try {
       await saveUsers((latest) => latest.map((u) => u.username === username ? { ...u, password: pw } : u));
       flash('success', `Password reset for "${username}".`);
+      setResetTarget(null); setResetPw('');
     } catch (err) { flash('error', 'Failed to save: ' + err.message); }
   };
 
   const deleteUser = async (username) => {
     if (username === currentUser.username) return flash('error', "You can't delete the account you're logged in with.");
-    if (!window.confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+    setConfirmDelete(null);
     try {
       let blocked = false;
       await saveUsers((latest) => {
@@ -166,8 +171,8 @@ export default function UserManagementPage({ currentUser }) {
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
-                <button type="button" style={ghostBtn} onClick={() => resetPassword(u.username)}><KeyRound size={13} /> Reset password</button>
-                <button type="button" style={{ ...ghostBtn, color: 'var(--status-a-text)' }} onClick={() => deleteUser(u.username)} disabled={isSelf}><Trash2 size={13} /> Delete</button>
+                <button type="button" style={ghostBtn} onClick={() => { setResetTarget(u.username); setResetPw(''); }}><KeyRound size={13} /> Reset password</button>
+                <button type="button" style={{ ...ghostBtn, color: 'var(--status-a-text)' }} onClick={() => setConfirmDelete(u.username)} disabled={isSelf}><Trash2 size={13} /> Delete</button>
               </div>
             </div>
             <PermissionChecks value={permissions} disabled={role === 'admin'} onChange={(p) => setDraft({ permissions: p })} />
@@ -175,6 +180,31 @@ export default function UserManagementPage({ currentUser }) {
           </div>
         );
       })}
+
+      {confirmDelete && (
+        <ConfirmModal
+          title="Delete user?"
+          confirmLabel="Delete"
+          message={`"${confirmDelete}" will no longer be able to log in. This cannot be undone.`}
+          onConfirm={() => deleteUser(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {resetTarget && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '15px', backdropFilter: 'blur(2px)' }} onClick={() => setResetTarget(null)}>
+          <form onSubmit={(e) => { e.preventDefault(); resetPassword(); }} onClick={(e) => e.stopPropagation()} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '22px 18px', width: '100%', maxWidth: '360px', boxShadow: '0 20px 50px var(--shadow-color)', border: '1px solid var(--border-color)' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 4px 0' }}>Reset password</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '12px', margin: '0 0 14px 0' }}>Choose a new password for <strong>@{resetTarget}</strong> (min 4 characters).</p>
+            <input autoFocus type="text" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="New password" autoComplete="off" style={{ ...input, marginBottom: '14px' }} />
+            <div style={{ display: 'flex', gap: '9px' }}>
+              <button type="button" onClick={() => setResetTarget(null)} style={{ flex: 1, padding: '9px 0', backgroundColor: 'transparent', border: '1.5px solid var(--border-color)', borderRadius: '24px', fontWeight: 600, fontSize: '12px', color: 'var(--text-main)', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" style={{ flex: 1, padding: '9px 0', backgroundColor: 'var(--accent-green-text)', border: 'none', borderRadius: '24px', fontWeight: 600, fontSize: '12px', color: '#fff', cursor: 'pointer' }}>Save password</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
+

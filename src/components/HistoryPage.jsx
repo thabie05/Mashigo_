@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Clock, Search, Filter, Calendar, CheckCircle, XCircle,
-  AlertCircle, DoorOpen, Users, ChevronDown
+  AlertCircle, DoorOpen, Users, ChevronDown, UserPlus, Pencil, Trash2, RotateCcw
 } from 'lucide-react';
 import { monthNames } from '../utils/holidays';
 
@@ -39,6 +39,11 @@ function HistoryPage({ history }) {
     if (s === 'absent') return { color: 'var(--status-a-text)', bg: 'var(--status-a-bg)', icon: <XCircle size={14} /> };
     if (s === 'late') return { color: 'var(--status-l-text)', bg: 'var(--status-l-bg)', icon: <Clock size={14} /> };
     if (s === 'early' || s === 'early leave') return { color: 'var(--status-e-text)', bg: 'var(--status-e-bg)', icon: <DoorOpen size={14} /> };
+    if (s === 'employee added') return { color: 'var(--status-p-text)', bg: 'var(--status-p-bg)', icon: <UserPlus size={14} /> };
+    if (s === 'employee edited') return { color: 'var(--accent-blue-text)', bg: 'var(--accent-blue)', icon: <Pencil size={14} /> };
+    if (s === 'employee restored') return { color: 'var(--status-p-text)', bg: 'var(--status-p-bg)', icon: <RotateCcw size={14} /> };
+    if (s === 'employee permanently deleted') return { color: 'var(--status-a-text)', bg: 'var(--status-a-bg)', icon: <Trash2 size={14} /> };
+    if (s === 'employee deleted') return { color: 'var(--status-a-text)', bg: 'var(--status-a-bg)', icon: <Trash2 size={14} /> };
     if (s === 'off duty') return { color: 'var(--status-o-text)', bg: 'var(--status-o-bg)', icon: <Users size={14} /> };
     return { color: 'var(--text-muted)', bg: 'var(--bg-hover)', icon: <AlertCircle size={14} /> };
   };

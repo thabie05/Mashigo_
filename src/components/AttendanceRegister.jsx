@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart3, ChevronDown, ChevronLeft, ChevronRight, Fingerprint, Gauge, List, Lock, LogOut, Mail, Menu, Moon, Pencil, Plus, Presentation, Users, Search, Trash2, X } from 'lucide-react';
-import { doc, setDoc, updateDoc, deleteField, arrayUnion, onSnapshot } from 'firebase/firestore';
+import { ArchiveX, BarChart3, ChevronDown, ChevronLeft, ChevronRight, Fingerprint, Gauge, List, Lock, LogOut, Mail, Menu, Moon, Pencil, Plus, Presentation, Users, Search, Trash2, X } from 'lucide-react';
+import { doc, setDoc, updateDoc, deleteField, deleteDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getSAHolidays } from '../utils/holidays';
 import { useTheme } from '../contexts/ThemeContext';
@@ -15,6 +15,7 @@ import HistoryPage from './HistoryPage';
 import EmailReportsPage from './EmailReportsPage';
 import DashboardPage from './DashboardPage';
 import UserManagementPage from './UserManagementPage';
+import DeletedEmployeesPage, { RETENTION_DAYS } from './DeletedEmployeesPage';
 import { can } from '../data/permissions';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -57,6 +58,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
   const popupRef = useRef(null);
   const employeePopupRef = useRef(null);
   const closedStaleShiftsRef = useRef(false);
+  const autoPurgedRef = useRef(false);
 
   // ---------- Firestore Listener ----------
   useEffect(() => {
@@ -156,6 +158,77 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     return months;
   };
 
+  // Builds a history entry for employee-list changes (add / rename / delete)
+  const buildEmployeeLog = (employee, status, note) => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return {
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      type: 'employee',
+      employeeId: employee.id,
+      employeeName: employee.name,
+      day: now.getDate(),
+      date: today,
+      status,
+      note,
+      editor: currentUser?.fullName || currentUser?.username || 'System',
+      editedAt: now.toISOString(),
+    };
+  };
+
+  // Remove an employee for good: record, attendance, notes/edits and enrolled fingerprints
+  const permanentlyRemove = async (emp, status, note, editor) => {
+    const log = { ...buildEmployeeLog(emp, status, note), ...(editor ? { editor } : {}) };
+    const remaining = employees.filter((e) => e.id !== emp.id);
+    const updates = { employees: remaining, history: arrayUnion(log), [`attendance.${emp.id}`]: deleteField() };
+    Object.keys(notes).forEach((k) => { if (k.startsWith(`${emp.id}-`)) updates[`notes.${k}`] = deleteField(); });
+    Object.keys(edits).forEach((k) => { if (k.startsWith(`${emp.id}-`)) updates[`edits.${k}`] = deleteField(); });
+    await updateDoc(doc(db, 'rollcall', 'data'), updates);
+    try { await deleteDoc(doc(db, 'fingerprints', emp.id)); } catch (e) { /* no fingerprint enrolled */ }
+  };
+
+  const handleRestoreEmployee = async (emp) => {
+    if (employees.some((e) => !e.isDeleted && e.name.toLowerCase() === emp.name.toLowerCase())) {
+      return alert(`An active employee named "${emp.name}" already exists. Rename one of them first.`);
+    }
+    const updated = employees.map((e) => { if (e.id !== emp.id) return e; const { deletedAt, ...rest } = e; return { ...rest, isDeleted: false }; });
+    const log = buildEmployeeLog(emp, 'Employee Restored', 'Restored from Deleted Employees');
+    setEmployees(updated); setHistory((prev) => [log, ...prev]);
+    try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updated, history: arrayUnion(log) }); } catch (err) { alert('Failed to restore: ' + err.message); }
+  };
+
+  const handlePurgeEmployee = (emp) => {
+    setConfirmModal({
+      message: `Permanently delete ${emp.name}? Their attendance records and fingerprints will be removed and this cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmModal(null);
+        try { await permanentlyRemove(emp, 'Employee Permanently Deleted', 'Removed permanently from Deleted Employees'); }
+        catch (err) { alert('Failed to delete permanently: ' + err.message); }
+      },
+    });
+  };
+
+  // Auto-purge: anything deleted more than RETENTION_DAYS ago is removed for good (once per session)
+  useEffect(() => {
+    if (loading || autoPurgedRef.current || !can(currentUser, 'manageEmployees')) return;
+    autoPurgedRef.current = true;
+    const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    const expired = employees.filter((e) => e.isDeleted && e.deletedAt && new Date(e.deletedAt).getTime() < cutoff);
+    (async () => {
+      let current = employees;
+      for (const emp of expired) {
+        try {
+          const log = { ...buildEmployeeLog(emp, 'Employee Permanently Deleted', `Auto-removed after ${RETENTION_DAYS} days`), editor: 'System' };
+          current = current.filter((e) => e.id !== emp.id);
+          const updates = { employees: current, history: arrayUnion(log), [`attendance.${emp.id}`]: deleteField() };
+          await updateDoc(doc(db, 'rollcall', 'data'), updates);
+          try { await deleteDoc(doc(db, 'fingerprints', emp.id)); } catch (e) { /* none */ }
+        } catch (err) { console.error('Auto-purge failed for', emp.name, err); }
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, employees]);
+
   const addEmployee = async () => {
     const name = newEmployeeName.trim();
     if (name === '') return;
@@ -164,8 +237,9 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     setAddError('');
     const newEmployee = { id: Date.now().toString(), name, isDeleted: false };
     const updatedEmployees = [...employees, newEmployee];
-    setEmployees(updatedEmployees); setNewEmployeeName(''); setShowAddForm(false);
-    try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees }); } catch (err) { setAddError('Failed to save to database: ' + err.message); }
+    const log = buildEmployeeLog(newEmployee, 'Employee Added', 'New employee added to the register');
+    setEmployees(updatedEmployees); setHistory(prev => [log, ...prev]); setNewEmployeeName(''); setShowAddForm(false);
+    try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees, history: arrayUnion(log) }); } catch (err) { setAddError('Failed to save to database: ' + err.message); }
   };
 
   const handleRenameEmployee = async (emp) => {
@@ -175,8 +249,9 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     const isDuplicate = employees.some((e) => e.id !== emp.id && e.name.toLowerCase() === newName.toLowerCase() && !e.isDeleted);
     if (isDuplicate) return alert('An employee with this name already exists!');
     const updatedEmployees = employees.map(e => e.id === emp.id ? { ...e, name: newName.trim() } : e);
-    setEmployees(updatedEmployees);
-    try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees }); } catch (err) { alert('Failed to rename: ' + err.message); }
+    const log = buildEmployeeLog({ ...emp, name: newName.trim() }, 'Employee Edited', `Renamed from "${emp.name}" to "${newName.trim()}"`);
+    setEmployees(updatedEmployees); setHistory(prev => [log, ...prev]);
+    try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees, history: arrayUnion(log) }); } catch (err) { alert('Failed to rename: ' + err.message); }
   };
 
   const handleDeleteEmployee = (emp) => {
@@ -184,9 +259,10 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     setConfirmModal({
       message: `Are you sure you want to delete ${emp.name}? They will be moved to the trash.`,
       onConfirm: async () => {
-        const updatedEmployees = employees.map(e => e.id === emp.id ? { ...e, isDeleted: true } : e);
-        setEmployees(updatedEmployees); setConfirmModal(null);
-        try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees }); } catch (err) { alert('Failed to delete: ' + err.message); }
+        const updatedEmployees = employees.map(e => e.id === emp.id ? { ...e, isDeleted: true, deletedAt: new Date().toISOString() } : e);
+        const log = buildEmployeeLog(emp, 'Employee Deleted', `Moved to Deleted Employees (kept ${RETENTION_DAYS} days)`);
+        setEmployees(updatedEmployees); setHistory(prev => [log, ...prev]); setConfirmModal(null);
+        try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees, history: arrayUnion(log) }); } catch (err) { alert('Failed to delete: ' + err.message); }
       }
     });
   };
@@ -418,6 +494,13 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                       )}
                     </div>
                   )}
+
+                  {can(currentUser, 'manageEmployees') && (
+                    <button type="button" onClick={() => setActivePage('deleted')} title="View deleted employees (restore within 60 days)" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '0 12px', height: '30px', boxSizing: 'border-box', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                      <ArchiveX size={13} className="shrink-0" /> Deleted
+                      {employees.filter((e) => e.isDeleted).length > 0 && <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--accent-green)', color: 'var(--accent-green-text)' }}>{employees.filter((e) => e.isDeleted).length}</span>}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -584,6 +667,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
             </div>
           )}
 
+          {activePage === 'deleted' && can(currentUser, 'manageEmployees') && <DeletedEmployeesPage employees={employees} canManage={can(currentUser, 'manageEmployees')} onRestore={handleRestoreEmployee} onPurge={handlePurgeEmployee} onBack={() => setActivePage('register')} />}
           {activePage === 'users' && currentUser.role === 'admin' && <div className="page-content" style={{ padding: 0 }}><UserManagementPage currentUser={currentUser} /></div>}
           {activePage === 'history' && can(currentUser, 'viewHistory') && <div className="page-content" style={{ padding: 0 }}><HistoryPage history={history} /></div>}
           {activePage === 'email' && can(currentUser, 'emailReports') && <div className="page-content" style={{ padding: 0 }}><EmailReportsPage employees={allActiveEmployees} attendance={attendance} currentUser={currentUser} /></div>}

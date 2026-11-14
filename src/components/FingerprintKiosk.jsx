@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { ArrowLeft, Clock } from 'lucide-react';
-import { doc, collection, onSnapshot, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, collection, onSnapshot, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import { recordFingerprintAction } from '../utils/attendanceWrites';
 import EnrollFingerprintModal from './EnrollFingerprintModal';
@@ -185,7 +185,9 @@ function FingerprintKiosk() {
     const docRef = doc(db, 'rollcall', 'data');
     const snap = await getDoc(docRef);
     const currentEmployees = snap.exists() ? snap.data().employees || [] : [];
-    await updateDoc(docRef, { employees: [...currentEmployees, newEmp] });
+    const nowD = new Date();
+    const log = { id: Date.now() + Math.floor(Math.random() * 1000), type: 'employee', employeeId: newEmp.id, employeeName: newEmp.name, day: nowD.getDate(), date: `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}-${String(nowD.getDate()).padStart(2, '0')}`, status: 'Employee Added', note: 'Added from kiosk', editor: 'Kiosk (admin password)', editedAt: nowD.toISOString() };
+    await updateDoc(docRef, { employees: [...currentEmployees, newEmp], history: arrayUnion(log) });
     setEnrollingNewEmployee(newEmp);
     setShowAdminLogin(false);
     setAdminPassword('');

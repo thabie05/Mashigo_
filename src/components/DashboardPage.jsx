@@ -126,7 +126,8 @@ export default function DashboardPage({ employees, attendance, history, currentM
                 {recentActivity.map((item, idx) => (
                   <div key={idx} style={{ borderBottom: idx !== recentActivity.length -1 ? '1px solid var(--border-color)' : 'none', paddingBottom: idx !== recentActivity.length -1 ? '12px' : '0' }}>
                     <p style={{ fontSize: '11px', color: 'var(--text-main)', margin: 0, fontWeight: 500 }}>
-                      {item.employeeName} was marked <strong style={{ color: item.status === 'Present' ? 'var(--status-p-text)' : item.status === 'Absent' ? 'var(--status-a-text)' : 'var(--text-muted)' }}>{item.status}</strong>
+                      {item.type === 'employee' ? <>{item.employeeName}: <strong style={{ color: (item.status === 'Employee Deleted' || item.status === 'Employee Permanently Deleted') ? 'var(--status-a-text)' : (item.status === 'Employee Added' || item.status === 'Employee Restored') ? 'var(--status-p-text)' : 'var(--accent-blue-text)' }}>{item.status}</strong></> : <>{item.employeeName} was marked <strong style={{ color: item.status === 'Present' ? 'var(--status-p-text)' : item.status === 'Absent' ? 'var(--status-a-text)' : 'var(--text-muted)' }}>{item.status}</strong>
+                    </>}
                     </p>
                     <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
                       By {item.editor} • {new Date(item.editedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
