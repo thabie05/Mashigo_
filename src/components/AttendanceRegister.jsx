@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArchiveX, BarChart3, ChevronDown, ChevronLeft, ChevronRight, Fingerprint, Gauge, List, Lock, LogOut, Mail, Menu, Moon, Pencil, Plus, Presentation, Users, Search, Trash2, X } from 'lucide-react';
-import { doc, setDoc, updateDoc, deleteField, deleteDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { DatabaseBackup, ArchiveX, BarChart3, ChevronDown, ChevronLeft, ChevronRight, Fingerprint, Gauge, List, Lock, LogOut, Mail, Menu, Moon, Pencil, Plus, Presentation, Users, Search, Trash2, X } from 'lucide-react';
+import { doc, collection, writeBatch, deleteDoc, arrayUnion, deleteField, onSnapshot } from 'firebase/firestore';
+import { ensureRollcallDoc, updateEmployeeList, removeEmployeeEverywhere } from '../utils/safeWrites';
+import { rollcallRef, monthRef, historyRef, monthIdOf, MONTHS_COL, HISTORY_COL, SCHEMA_VERSION, migrateIfNeeded } from '../utils/dataModel';
 import { db } from '../firebase';
 import { getSAHolidays } from '../utils/holidays';
 import { useTheme } from '../contexts/ThemeContext';
 import PasswordChangeModal from './PasswordChangeModal';
 import EmployeeReportModal from './EmployeeReportModal';
 import ConfirmModal from './ConfirmModal';
+import EmployeeFormModal from './EmployeeFormModal';
 import EnrollFingerprintModal from './EnrollFingerprintModal';
 import StatsPage from './StatsPage';
 import { closeStaleShifts } from '../utils/attendanceWrites';
@@ -15,6 +18,8 @@ import HistoryPage from './HistoryPage';
 import EmailReportsPage from './EmailReportsPage';
 import DashboardPage from './DashboardPage';
 import UserManagementPage from './UserManagementPage';
+import BackupPage from './BackupPage';
+import { createBackup } from '../utils/Backup';
 import DeletedEmployeesPage, { RETENTION_DAYS } from './DeletedEmployeesPage';
 import { can } from '../data/permissions';
 
@@ -26,18 +31,34 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
   const logoSrc = theme === 'dark' ? '/logo-dark.png' : '/logo-light.png';
 
   const [employees, setEmployees] = useState([]);
-  const [attendance, setAttendance] = useState({});
-  const [edits, setEdits] = useState({});
-  const [history, setHistory] = useState([]);
-  const [notes, setNotes] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [monthDocs, setMonthDocs] = useState({});     // rollcall_months/{YYYY-MM}
+  const [historyDocs, setHistoryDocs] = useState({});   // rollcall_history/{YYYY-MM}
+  // each source is "ready" only once the SERVER has answered (not a cache-only answer)
+  const [ready, setReady] = useState({ main: false, months: false, history: false });
+  const markReady = (k) => setReady((r) => (r[k] ? r : { ...r, [k]: true }));
+  const loading = !(ready.main && ready.months && ready.history);
+
+  const { attendance, edits, notes } = useMemo(() => {
+    const att = {}; const ed = {}; const nt = {};
+    Object.values(monthDocs).forEach((m) => {
+      Object.entries(m.attendance || {}).forEach(([emp, days]) => {
+        att[emp] = att[emp] || {};
+        Object.entries(days || {}).forEach(([d, v]) => { att[emp][d] = v === true ? 'present' : v === false ? 'absent' : v; });
+      });
+      Object.assign(ed, m.edits || {});
+      Object.assign(nt, m.notes || {});
+    });
+    return { attendance: att, edits: ed, notes: nt };
+  }, [monthDocs]);
+  const history = useMemo(
+    () => Object.values(historyDocs).flatMap((h) => h.entries || []).sort((a, b) => String(b.editedAt || '').localeCompare(String(a.editedAt || ''))),
+    [historyDocs],
+  );
   
   const [activePage, setActivePage] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
 
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newEmployeeName, setNewEmployeeName] = useState('');
-  const [addError, setAddError] = useState('');
+  const [employeeForm, setEmployeeForm] = useState(null); // null | {} (add) | employee (edit)
 
   const [popup, setPopup] = useState(null);
   const [popupNote, setPopupNote] = useState('');
@@ -59,41 +80,53 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
   const employeePopupRef = useRef(null);
   const closedStaleShiftsRef = useRef(false);
   const autoPurgedRef = useRef(false);
+  const autoBackupRef = useRef(false);
 
-  // ---------- Firestore Listener ----------
+  const [slowLoad, setSlowLoad] = useState(false);
   useEffect(() => {
-    const docRef = doc(db, 'rollcall', 'data');
-    const unsubscribe = onSnapshot(docRef, (snap) => {
+    if (!loading) { setSlowLoad(false); return; }
+    const t = setTimeout(() => setSlowLoad(true), 8000);
+    return () => clearTimeout(t);
+  }, [loading]);
+
+  // ---------- Firestore listeners ----------
+  // rollcall/data = employee list only; months and history live in their own collections.
+  useEffect(() => {
+    const unsubMain = onSnapshot(rollcallRef(), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        const savedAttendance = data.attendance || {};
-        const convertedAttendance = {};
-        for (const empId in savedAttendance) {
-          convertedAttendance[empId] = {};
-          for (const dateKey in savedAttendance[empId]) {
-            const value = savedAttendance[empId][dateKey];
-            if (value === true) convertedAttendance[empId][dateKey] = 'present';
-            else if (value === false) convertedAttendance[empId][dateKey] = 'absent';
-            else convertedAttendance[empId][dateKey] = value;
-          }
-        }
         setEmployees(data.employees || []);
-        setAttendance(convertedAttendance);
-        setEdits(data.edits || {});
-        setHistory(data.history || []);
-        setNotes(data.notes || {});
-
-        if (!closedStaleShiftsRef.current) {
-          closedStaleShiftsRef.current = true;
-          closeStaleShifts().catch((err) => console.error('Failed to close stale shifts:', err));
+        if (data.schemaVersion !== SCHEMA_VERSION) {
+          // old single-document data: copy it into the month/history documents (a safety backup is saved first)
+          migrateIfNeeded().catch((err) => console.error('Data split failed:', err));
         }
-      } else {
-        setDoc(docRef, { employees: [], attendance: {}, edits: {}, history: [], notes: {} }).catch(err => console.error("Error creating initial document:", err));
+        if (!snap.metadata.fromCache) markReady('main');
+      } else if (!snap.metadata.fromCache) {
+        // The SERVER says there is no register document: create it, but only through a
+        // transaction that cannot overwrite an existing one. The next snapshot loads it.
+        ensureRollcallDoc().catch((err) => console.error('Error creating initial document:', err));
       }
-      setLoading(false);
-    });
-    return () => unsubscribe();
+      // A cache-only "missing" answer (offline) is never treated as an empty register.
+    }, (err) => console.error('Register listener error:', err));
+    const unsubMonths = onSnapshot(collection(db, MONTHS_COL), (snap) => {
+      if (snap.metadata.fromCache) return;
+      const m = {}; snap.docs.forEach((d) => { m[d.id] = d.data(); });
+      setMonthDocs(m); markReady('months');
+    }, (err) => console.error('Months listener error:', err));
+    const unsubHistory = onSnapshot(collection(db, HISTORY_COL), (snap) => {
+      if (snap.metadata.fromCache) return;
+      const h = {}; snap.docs.forEach((d) => { h[d.id] = d.data(); });
+      setHistoryDocs(h); markReady('history');
+    }, (err) => console.error('History listener error:', err));
+    return () => { unsubMain(); unsubMonths(); unsubHistory(); };
   }, []);
+
+  // close shifts left open on earlier days, once per session, after the data has loaded
+  useEffect(() => {
+    if (loading || closedStaleShiftsRef.current) return;
+    closedStaleShiftsRef.current = true;
+    closeStaleShifts().catch((err) => console.error('Failed to close stale shifts:', err));
+  }, [loading]);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -179,11 +212,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
   // Remove an employee for good: record, attendance, notes/edits and enrolled fingerprints
   const permanentlyRemove = async (emp, status, note, editor) => {
     const log = { ...buildEmployeeLog(emp, status, note), ...(editor ? { editor } : {}) };
-    const remaining = employees.filter((e) => e.id !== emp.id);
-    const updates = { employees: remaining, history: arrayUnion(log), [`attendance.${emp.id}`]: deleteField() };
-    Object.keys(notes).forEach((k) => { if (k.startsWith(`${emp.id}-`)) updates[`notes.${k}`] = deleteField(); });
-    Object.keys(edits).forEach((k) => { if (k.startsWith(`${emp.id}-`)) updates[`edits.${k}`] = deleteField(); });
-    await updateDoc(doc(db, 'rollcall', 'data'), updates);
+    await removeEmployeeEverywhere(emp, log);
     try { await deleteDoc(doc(db, 'fingerprints', emp.id)); } catch (e) { /* no fingerprint enrolled */ }
   };
 
@@ -191,10 +220,10 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     if (employees.some((e) => !e.isDeleted && e.name.toLowerCase() === emp.name.toLowerCase())) {
       return alert(`An active employee named "${emp.name}" already exists. Rename one of them first.`);
     }
-    const updated = employees.map((e) => { if (e.id !== emp.id) return e; const { deletedAt, ...rest } = e; return { ...rest, isDeleted: false }; });
     const log = buildEmployeeLog(emp, 'Employee Restored', 'Restored from Deleted Employees');
-    setEmployees(updated); setHistory((prev) => [log, ...prev]);
-    try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updated, history: arrayUnion(log) }); } catch (err) { alert('Failed to restore: ' + err.message); }
+    try {
+      await updateEmployeeList((list) => list.map((e) => { if (e.id !== emp.id) return e; const { deletedAt, ...rest } = e; return { ...rest, isDeleted: false }; }), [log]);
+    } catch (err) { alert('Failed to restore (nothing was changed): ' + err.message); }
   };
 
   const handlePurgeEmployee = (emp) => {
@@ -202,67 +231,72 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
       message: `Permanently delete ${emp.name}? Their attendance records and fingerprints will be removed and this cannot be undone.`,
       onConfirm: async () => {
         setConfirmModal(null);
-        try { await permanentlyRemove(emp, 'Employee Permanently Deleted', 'Removed permanently from Deleted Employees'); }
-        catch (err) { alert('Failed to delete permanently: ' + err.message); }
+        try { await createBackup('safety', `Before permanently deleting ${emp.name}`, currentUser?.fullName || 'Admin'); await permanentlyRemove(emp, 'Employee Permanently Deleted', 'Removed permanently from Deleted Employees'); }
+        catch (err) { alert('Nothing was deleted, because the safety backup or the delete could not be completed: ' + err.message); }
       },
     });
   };
 
+  // Automatic daily snapshot (first admin to open the app each day)
+  useEffect(() => {
+    if (loading || autoBackupRef.current || currentUser?.role !== 'admin' || employees.length === 0) return;
+    autoBackupRef.current = true;
+    createBackup('auto', 'Daily backup', 'System').catch((err) => console.error('Auto backup failed:', err));
+  }, [loading, employees, currentUser]);
+
   // Auto-purge: anything deleted more than RETENTION_DAYS ago is removed for good (once per session)
   useEffect(() => {
-    if (loading || autoPurgedRef.current || !can(currentUser, 'manageEmployees')) return;
+    if (loading || employees.length === 0 || autoPurgedRef.current || !can(currentUser, 'manageEmployees')) return;
     autoPurgedRef.current = true;
     const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
     const expired = employees.filter((e) => e.isDeleted && e.deletedAt && new Date(e.deletedAt).getTime() < cutoff);
     (async () => {
-      let current = employees;
       for (const emp of expired) {
-        try {
-          const log = { ...buildEmployeeLog(emp, 'Employee Permanently Deleted', `Auto-removed after ${RETENTION_DAYS} days`), editor: 'System' };
-          current = current.filter((e) => e.id !== emp.id);
-          const updates = { employees: current, history: arrayUnion(log), [`attendance.${emp.id}`]: deleteField() };
-          await updateDoc(doc(db, 'rollcall', 'data'), updates);
-          try { await deleteDoc(doc(db, 'fingerprints', emp.id)); } catch (e) { /* none */ }
-        } catch (err) { console.error('Auto-purge failed for', emp.name, err); }
+        try { await permanentlyRemove(emp, 'Employee Permanently Deleted', `Auto-removed after ${RETENTION_DAYS} days`, 'System'); }
+        catch (err) { console.error('Auto-purge failed for', emp.name, err); }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, employees]);
 
-  const addEmployee = async () => {
-    const name = newEmployeeName.trim();
-    if (name === '') return;
-    const isDuplicate = employees.some((emp) => emp.name.toLowerCase() === name.toLowerCase() && !emp.isDeleted);
-    if (isDuplicate) { setAddError('This employee already exists!'); setTimeout(() => setAddError(''), 3000); return; }
-    setAddError('');
-    const newEmployee = { id: Date.now().toString(), name, isDeleted: false };
-    const updatedEmployees = [...employees, newEmployee];
-    const log = buildEmployeeLog(newEmployee, 'Employee Added', 'New employee added to the register');
-    setEmployees(updatedEmployees); setHistory(prev => [log, ...prev]); setNewEmployeeName(''); setShowAddForm(false);
-    try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees, history: arrayUnion(log) }); } catch (err) { setAddError('Failed to save to database: ' + err.message); }
+  // Both return an error message (shown in the form) or nothing on success
+  const addEmployee = async (v) => {
+    if (employees.some((e) => !e.isDeleted && e.name.toLowerCase() === v.name.toLowerCase())) return 'An employee with this name already exists.';
+    const newEmployee = { id: Date.now().toString(), isDeleted: false, ...Object.fromEntries(Object.entries(v).filter(([, x]) => x)) };
+    const log = buildEmployeeLog(newEmployee, 'Employee Added', `New employee added${v.position ? ` (${v.position})` : ''}`);
+    try {
+      await updateEmployeeList((list) => {
+        if (list.some((e) => !e.isDeleted && e.name.toLowerCase() === v.name.toLowerCase())) throw new Error('An employee with this name already exists.');
+        return [...list, newEmployee];
+      }, [log]);
+      setEmployeeForm(null);
+    } catch (err) { return err.message.startsWith('An employee') ? err.message : 'Could not save (nothing was changed): ' + err.message; }
   };
 
-  const handleRenameEmployee = async (emp) => {
-    setEmployeeActionPopup(null);
-    const newName = window.prompt(`Rename "${emp.name}" to:`, emp.name);
-    if (!newName || newName.trim() === '' || newName === emp.name) return;
-    const isDuplicate = employees.some((e) => e.id !== emp.id && e.name.toLowerCase() === newName.toLowerCase() && !e.isDeleted);
-    if (isDuplicate) return alert('An employee with this name already exists!');
-    const updatedEmployees = employees.map(e => e.id === emp.id ? { ...e, name: newName.trim() } : e);
-    const log = buildEmployeeLog({ ...emp, name: newName.trim() }, 'Employee Edited', `Renamed from "${emp.name}" to "${newName.trim()}"`);
-    setEmployees(updatedEmployees); setHistory(prev => [log, ...prev]);
-    try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees, history: arrayUnion(log) }); } catch (err) { alert('Failed to rename: ' + err.message); }
+  const editEmployee = async (emp, v) => {
+    if (employees.some((e) => e.id !== emp.id && !e.isDeleted && e.name.toLowerCase() === v.name.toLowerCase())) return 'An employee with this name already exists.';
+    const labels = { name: 'name', employeeNumber: 'employee number', position: 'job title', phone: 'phone', email: 'email', startDate: 'start date' };
+    const changed = Object.keys(labels).filter((k) => (emp[k] || '') !== v[k]);
+    if (changed.length === 0) { setEmployeeForm(null); return; }
+    const note = changed.map((k) => k === 'name' ? `name "${emp.name}" → "${v.name}"` : labels[k]).join(', ');
+    const log = buildEmployeeLog({ ...emp, name: v.name }, 'Employee Edited', `Changed ${note}`);
+    try {
+      await updateEmployeeList((list) => list.map((e) => (e.id === emp.id ? { ...e, ...v } : e)), [log]);
+      setEmployeeForm(null);
+    } catch (err) { return 'Could not save (nothing was changed): ' + err.message; }
   };
+
+  const handleRenameEmployee = (emp) => { setEmployeeActionPopup(null); setEmployeeForm(emp); };
 
   const handleDeleteEmployee = (emp) => {
     setEmployeeActionPopup(null);
     setConfirmModal({
       message: `Are you sure you want to delete ${emp.name}? They will be moved to the trash.`,
       onConfirm: async () => {
-        const updatedEmployees = employees.map(e => e.id === emp.id ? { ...e, isDeleted: true, deletedAt: new Date().toISOString() } : e);
         const log = buildEmployeeLog(emp, 'Employee Deleted', `Moved to Deleted Employees (kept ${RETENTION_DAYS} days)`);
-        setEmployees(updatedEmployees); setHistory(prev => [log, ...prev]); setConfirmModal(null);
-        try { await updateDoc(doc(db, 'rollcall', 'data'), { employees: updatedEmployees, history: arrayUnion(log) }); } catch (err) { alert('Failed to delete: ' + err.message); }
+        setConfirmModal(null);
+        try { await updateEmployeeList((list) => list.map((e) => e.id === emp.id ? { ...e, isDeleted: true, deletedAt: new Date().toISOString() } : e), [log]); }
+        catch (err) { alert('Failed to delete (nothing was changed): ' + err.message); }
       }
     });
   };
@@ -278,15 +312,15 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     const editorName = currentUser?.fullName || currentUser?.username || 'System';
     const historyEntry = { id: Date.now(), employeeId, employeeName: employee?.name || 'Unknown', day, date: dateKey, status: statusLabel, note: trimmedNote || '', editor: editorName, editedAt: new Date().toISOString() };
     
-    setEdits(prev => ({ ...prev, [`${employeeId}-${dateKey}`]: newCount }));
-    setAttendance(prev => ({ ...prev, [employeeId]: { ...(prev[employeeId] || {}), [dateKey]: status } }));
-    if (trimmedNote) setNotes(prev => ({ ...prev, [`${employeeId}-${dateKey}`]: trimmedNote }));
-    setHistory(prev => [historyEntry, ...prev]);
     setPopup(null); setPopupNote('');
     try {
-      const updates = { [`attendance.${employeeId}.${dateKey}`]: status, [`edits.${employeeId}-${dateKey}`]: newCount, history: arrayUnion(historyEntry) };
-      if (trimmedNote) updates[`notes.${employeeId}-${dateKey}`] = trimmedNote;
-      await updateDoc(doc(db, 'rollcall', 'data'), updates);
+      const monthId = monthIdOf(dateKey);
+      const monthUpdate = { attendance: { [employeeId]: { [dateKey]: status } }, edits: { [`${employeeId}-${dateKey}`]: newCount } };
+      if (trimmedNote) monthUpdate.notes = { [`${employeeId}-${dateKey}`]: trimmedNote };
+      const batch = writeBatch(db);
+      batch.set(monthRef(monthId), monthUpdate, { merge: true });
+      batch.set(historyRef(monthId), { entries: arrayUnion(historyEntry) }, { merge: true });
+      await batch.commit();
     } catch (err) { alert('Failed to save to database: ' + err.message); }
   };
 
@@ -296,18 +330,18 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     const editorName = currentUser?.fullName || currentUser?.username || 'System';
     const historyEntry = { id: Date.now(), employeeId, employeeName: employee?.name || 'Unknown', day, date: dateKey, status: 'Cleared', note: '', editor: editorName, editedAt: new Date().toISOString() };
     
-    setAttendance(prev => { const updated = { ...prev }; if (updated[employeeId]) delete updated[employeeId][dateKey]; return updated; });
-    setNotes(prev => { const u = { ...prev }; delete u[`${employeeId}-${dateKey}`]; return u; });
-    setEdits(prev => { const u = { ...prev }; delete u[`${employeeId}-${dateKey}`]; return u; });
-    setHistory(prev => [historyEntry, ...prev]);
     setPopup(null); setPopupNote('');
     try {
-      await updateDoc(doc(db, 'rollcall', 'data'), {
-        [`attendance.${employeeId}.${dateKey}`]: deleteField(),
-        [`notes.${employeeId}-${dateKey}`]: deleteField(),
-        [`edits.${employeeId}-${dateKey}`]: deleteField(),
-        history: arrayUnion(historyEntry),
-      });
+      const monthId = monthIdOf(dateKey);
+      const key = `${employeeId}-${dateKey}`;
+      const batch = writeBatch(db);
+      batch.set(monthRef(monthId), {
+        attendance: { [employeeId]: { [dateKey]: deleteField() } },
+        notes: { [key]: deleteField() },
+        edits: { [key]: deleteField() },
+      }, { merge: true });
+      batch.set(historyRef(monthId), { entries: arrayUnion(historyEntry) }, { merge: true });
+      await batch.commit();
     } catch (err) { alert('Failed to clear mark: ' + err.message); }
   };
 
@@ -352,7 +386,10 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
     { name: 'Off Duty', value: monthTotals.off, color: 'var(--status-o-text)' },
   ];
   
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--bg-body)', color: 'var(--text-main)' }}>Loading register…</div>;
+  if (loading) return <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--bg-body)', color: 'var(--text-main)', textAlign: 'center', padding: '20px' }}>
+    <div>Loading register…</div>
+    {slowLoad && <div style={{ color: 'var(--text-muted)', fontSize: '13px', maxWidth: '380px' }}>Still trying to reach the database. Check the internet connection. Nothing is changed while the app is offline.</div>}
+  </div>;
 
   return (
     <div className="app-wrapper">
@@ -361,7 +398,13 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
 
         <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
           <div className="logo-area">
-            <img src={logoSrc} alt="School Logo" style={{ height: '32px', objectFit: 'contain' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+              <div aria-hidden="true" style={{ width: '36px', height: '36px', flexShrink: 0, borderRadius: '9px', border: '1.5px solid var(--accent-green-text)', background: 'var(--accent-green)', color: 'var(--accent-green-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.02em' }}>BM</div>
+              <div style={{ lineHeight: 1.2, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600, fontSize: '15px', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>Attendance</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Register</div>
+              </div>
+            </div>
             <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '5px' }}>
               <X size={16} className="inline-block align-middle shrink-0" style={{ fontSize: '18px' }} />
             </button>
@@ -394,7 +437,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
         </aside>
 
         <main className="main-content">
-          <header className="top-header" style={{ position: 'relative' }}>
+          <header className="top-header" style={{ position: 'relative', zIndex: 200 }}>
             
             {/* Left Side: Hamburger Menu (Only if sidebar is closed) */}
             {!isSidebarOpen && (
@@ -405,19 +448,17 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
               </div>
             )}
 
-            {/* Center: Logo (Only if sidebar is closed) */}
-            {!isSidebarOpen && (
-              <div 
-                style={{ 
-                  position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', cursor: 'pointer', zIndex: 1
-                }}
-                onClick={() => setIsSidebarOpen(true)}
-                title="Open Sidebar"
-              >
-                <img src={logoSrc} alt="B. Mashilo Designs" style={{ height: '34px', objectFit: 'contain' }} />
-              </div>
-            )}
-            
+            {/* Center: Logo (always visible; click opens the sidebar when it is closed) */}
+            <div
+              style={{
+                position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', cursor: isSidebarOpen ? 'default' : 'pointer', zIndex: 1
+              }}
+              onClick={() => { if (!isSidebarOpen) setIsSidebarOpen(true); }}
+              title={isSidebarOpen ? 'Register' : 'Open Sidebar'}
+            >
+              <img src={logoSrc} alt="Register" style={{ height: '46px', objectFit: 'contain' }} />
+            </div>
+
             {/* Right Side: Actions (Always Visible) */}
             <div className="header-actions" style={{ marginLeft: 'auto', zIndex: 2 }}>
               <div ref={userMenuRef} style={{ position: 'relative' }}>
@@ -431,6 +472,11 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                     {currentUser.role === 'admin' && (
                       <button type="button" role="menuitem" onClick={() => { setShowUserMenu(false); handleNavClick('users'); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 14px', border: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                         <Users size={16} className="shrink-0" /> Users &amp; Access
+                      </button>
+                    )}
+                    {currentUser.role === 'admin' && (
+                      <button type="button" role="menuitem" onClick={() => { setShowUserMenu(false); handleNavClick('backup'); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 14px', border: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                        <DatabaseBackup size={16} className="shrink-0" /> Backup &amp; Restore
                       </button>
                     )}
                     <button type="button" role="menuitem" onClick={() => { toggleTheme(); setShowUserMenu(false); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 14px', border: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
@@ -480,19 +526,9 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                   </div>
 
                   {can(currentUser, 'manageEmployees') && (
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      {showAddForm ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-card)', border: '1px solid var(--accent-green-text)', borderRadius: '6px', padding: '2px', height: '30px', boxSizing: 'border-box' }}>
-                          <input type="text" placeholder="Employee Name" value={newEmployeeName} onChange={(e) => { setNewEmployeeName(e.target.value); setAddError(''); }} onKeyDown={(e) => e.key === 'Enter' && addEmployee()} autoFocus style={{ border: 'none', outline: 'none', padding: '0 6px', fontSize: '12px', width: '130px', color: 'var(--text-main)', background: 'transparent', height: '100%' }} />
-                          <button type="button" onClick={addEmployee} style={{ background: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 10px', height: '24px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
-                          <button type="button" onClick={() => { setShowAddForm(false); setNewEmployeeName(''); setAddError(''); }} style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', padding: '0 4px', height: '100%' }}><X size={16} className="inline-block align-middle shrink-0" /></button>
-                        </div>
-                      ) : (
-                        <button type="button" onClick={() => setShowAddForm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '0 12px', height: '30px', boxSizing: 'border-box', backgroundColor: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                          <Plus size={13} className="inline-block align-middle shrink-0" /> Add Employee
-                        </button>
-                      )}
-                    </div>
+                    <button type="button" onClick={() => setEmployeeForm({})} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '0 12px', height: '30px', boxSizing: 'border-box', backgroundColor: 'var(--accent-green-text)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                      <Plus size={13} className="inline-block align-middle shrink-0" /> Add Employee
+                    </button>
                   )}
 
                   {can(currentUser, 'manageEmployees') && (
@@ -503,8 +539,6 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
                   )}
                 </div>
               </div>
-
-              {addError && <div style={{ backgroundColor: 'var(--accent-red)', color: 'var(--accent-red-text)', padding: '10px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 500, marginBottom: '16px' }}>{addError}</div>}
 
               <div style={{ display: 'flex', gap: '14px', marginBottom: '10px', fontSize: '11px', color: 'var(--text-muted)', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--status-p-text)' }}></div> Present</div>
@@ -668,6 +702,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
           )}
 
           {activePage === 'deleted' && can(currentUser, 'manageEmployees') && <DeletedEmployeesPage employees={employees} canManage={can(currentUser, 'manageEmployees')} onRestore={handleRestoreEmployee} onPurge={handlePurgeEmployee} onBack={() => setActivePage('register')} />}
+          {activePage === 'backup' && currentUser.role === 'admin' && <BackupPage currentUser={currentUser} onBack={() => setActivePage('register')} />}
           {activePage === 'users' && currentUser.role === 'admin' && <div className="page-content" style={{ padding: 0 }}><UserManagementPage currentUser={currentUser} /></div>}
           {activePage === 'history' && can(currentUser, 'viewHistory') && <div className="page-content" style={{ padding: 0 }}><HistoryPage history={history} /></div>}
           {activePage === 'email' && can(currentUser, 'emailReports') && <div className="page-content" style={{ padding: 0 }}><EmailReportsPage employees={allActiveEmployees} attendance={attendance} currentUser={currentUser} /></div>}
@@ -725,6 +760,7 @@ function AttendanceRegister({ currentUser, onLogout, onPasswordChanged }) {
       {selectedEmployee && <EmployeeReportModal employee={selectedEmployee} report={getEmployeeReport(selectedEmployee.id)} year={currentYear} onClose={() => setSelectedEmployee(null)} />}
       {enrollEmployee && <EnrollFingerprintModal employee={enrollEmployee} onClose={() => setEnrollEmployee(null)} />}
       {showStats && <StatsPage stats={monthStats} currentMonth={currentMonth} currentYear={currentYear} onClose={() => setShowStats(false)} />}
+      {employeeForm && <EmployeeFormModal employee={employeeForm.id ? employeeForm : null} onClose={() => setEmployeeForm(null)} onSubmit={(v) => (employeeForm.id ? editEmployee(employeeForm, v) : addEmployee(v))} />}
       {confirmModal && <ConfirmModal message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal(null)} />}
     </div>
   );

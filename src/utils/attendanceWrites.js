@@ -1,5 +1,6 @@
-import { doc, updateDoc, getDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, writeBatch, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
+import { monthRef, historyRef, MONTHS_COL, rollcallRef, groupHistory, monthIdOf } from './dataModel';
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -7,15 +8,17 @@ export const dateKeyFor = (date) => `${date.getFullYear()}-${pad(date.getMonth()
 
 /**
  * Records a fingerprint action (start or end shift) with validation.
+ * Time logs, the attendance mark and the history entry all live in the month documents
+ * (rollcall_months/{YYYY-MM} and rollcall_history/{YYYY-MM}); the employee list is never touched.
  * Returns { action, time, clockInTime, clockOutTime, error }
  */
 export async function recordFingerprintAction(employee, action) {
   const now = new Date();
   const dateKey = dateKeyFor(now);
+  const monthId = monthIdOf(dateKey);
   const logKey = `${employee.id}-${dateKey}`;
-  const docRef = doc(db, 'rollcall', 'data');
 
-  const snap = await getDoc(docRef);
+  const snap = await getDoc(monthRef(monthId)); // fails offline: nothing is recorded
   const existingLog = snap.exists() ? (snap.data().timeLogs || {})[logKey] : undefined;
   const nowIso = now.toISOString();
 
@@ -37,11 +40,13 @@ export async function recordFingerprintAction(employee, action) {
         clockInTime: new Date(existingLog.clockIn),
       };
     }
-    await updateDoc(docRef, {
-      [`timeLogs.${logKey}.clockIn`]: nowIso,
-      [`attendance.${employee.id}.${dateKey}`]: 'present',
-      history: arrayUnion({ ...baseHistoryEntry, status: 'Present (fingerprint clock-in)' }),
-    });
+    const batch = writeBatch(db);
+    batch.set(monthRef(monthId), {
+      timeLogs: { [logKey]: { clockIn: nowIso } },
+      attendance: { [employee.id]: { [dateKey]: 'present' } },
+    }, { merge: true });
+    batch.set(historyRef(monthId), { entries: arrayUnion({ ...baseHistoryEntry, status: 'Present (fingerprint clock-in)' }) }, { merge: true });
+    await batch.commit();
     return { action: 'clock-in', time: now };
   }
 
@@ -56,10 +61,10 @@ export async function recordFingerprintAction(employee, action) {
         clockOutTime: new Date(existingLog.clockOut),
       };
     }
-    await updateDoc(docRef, {
-      [`timeLogs.${logKey}.clockOut`]: nowIso,
-      history: arrayUnion({ ...baseHistoryEntry, status: 'Clock-out (fingerprint)' }),
-    });
+    const batch = writeBatch(db);
+    batch.set(monthRef(monthId), { timeLogs: { [logKey]: { clockOut: nowIso } } }, { merge: true });
+    batch.set(historyRef(monthId), { entries: arrayUnion({ ...baseHistoryEntry, status: 'Clock-out (fingerprint)' }) }, { merge: true });
+    await batch.commit();
     return { action: 'clock-out', time: now, clockInTime: new Date(existingLog.clockIn) };
   }
 
@@ -67,53 +72,55 @@ export async function recordFingerprintAction(employee, action) {
 }
 
 /**
- * Finds every timeLogs entry from a PAST day that has a clockIn but no
- * clockOut and closes it out at 23:59:59 of that day.
+ * Finds every timeLogs entry from a PAST day (strictly before today) that has a clockIn but
+ * no clockOut — someone forgot to end their shift — and closes it at 23:59:59 of that day.
+ * Safe to call repeatedly and from several places: it only sets the specific fields of the
+ * specific stale entries (merge writes), never replacing a document.
  */
 export async function closeStaleShifts() {
-  const docRef = doc(db, 'rollcall', 'data');
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return { closed: 0 };
-
-  const data = snap.data();
-  const timeLogs = data.timeLogs || {};
-  const employees = data.employees || [];
+  const monthsSnap = await getDocs(collection(db, MONTHS_COL));
+  if (monthsSnap.metadata.fromCache) return { closed: 0 }; // not sure we are seeing the server: do nothing
+  const empSnap = await getDoc(rollcallRef());
   const nameById = {};
-  employees.forEach((e) => { nameById[e.id] = e.name; });
+  if (empSnap.exists()) (empSnap.data().employees || []).forEach((e) => { nameById[e.id] = e.name; });
 
   const todayKey = dateKeyFor(new Date());
-  const updates = {};
+  const writes = []; // [ref, value]
   const historyEntries = [];
 
-  for (const logKey of Object.keys(timeLogs)) {
-    const entry = timeLogs[logKey];
-    if (!entry || !entry.clockIn || entry.clockOut) continue; // only open shifts
-
-    // logKey = "{employeeId}-{YYYY-MM-DD}" — the date is always the last 10 chars.
-    const dateKey = logKey.slice(-10);
-    if (dateKey >= todayKey) continue; // today — still an active shift
-
-    const employeeId = logKey.slice(0, logKey.length - 11); // strip "-YYYY-MM-DD"
-    const midnightIso = new Date(`${dateKey}T23:59:59`).toISOString();
-
-    updates[`timeLogs.${logKey}.clockOut`] = midnightIso;
-    updates[`timeLogs.${logKey}.autoClockOut`] = true;
-    historyEntries.push({
-      id: Date.now() + Math.random(),
-      employeeId,
-      employeeName: nameById[employeeId] || 'Unknown',
-      day: Number(dateKey.slice(-2)),
-      date: dateKey,
-      status: 'Auto clock-out (forgot to end shift)',
-      note: '',
-      editor: 'System (midnight auto clock-out)',
-      editedAt: midnightIso,
+  monthsSnap.docs.forEach((d) => {
+    const timeLogs = d.data().timeLogs || {};
+    const fixes = {};
+    Object.keys(timeLogs).forEach((logKey) => {
+      const entry = timeLogs[logKey];
+      if (!entry || !entry.clockIn || entry.clockOut) return; // only open shifts
+      const dateKey = logKey.slice(-10);
+      if (dateKey >= todayKey) return; // today (or future) — still an active shift
+      const employeeId = logKey.slice(0, logKey.length - 11);
+      const midnightIso = new Date(`${dateKey}T23:59:59`).toISOString();
+      fixes[logKey] = { clockOut: midnightIso, autoClockOut: true };
+      historyEntries.push({
+        id: Date.now() + Math.random(),
+        employeeId,
+        employeeName: nameById[employeeId] || 'Unknown',
+        day: Number(dateKey.slice(-2)),
+        date: dateKey,
+        status: 'Auto clock-out (forgot to end shift)',
+        note: '',
+        editor: 'System (midnight auto clock-out)',
+        editedAt: midnightIso,
+      });
     });
-  }
+    if (Object.keys(fixes).length) writes.push([d.ref, { timeLogs: fixes }]);
+  });
 
   if (historyEntries.length === 0) return { closed: 0 };
+  Object.entries(groupHistory(historyEntries)).forEach(([id, entries]) => writes.push([historyRef(id), { entries: arrayUnion(...entries) }]));
 
-  updates.history = arrayUnion(...historyEntries);
-  await updateDoc(docRef, updates);
+  for (let i = 0; i < writes.length; i += 200) {
+    const batch = writeBatch(db);
+    writes.slice(i, i + 200).forEach(([ref, value]) => batch.set(ref, value, { merge: true }));
+    await batch.commit();
+  }
   return { closed: historyEntries.length };
 }

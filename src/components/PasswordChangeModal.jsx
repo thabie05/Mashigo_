@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { loadUsers, USERS_STORAGE_KEY } from '../data/users';
+import { updateUsers } from '../utils/safeWrites';
+
 
 function PasswordChangeModal({ currentUser, onClose, onPasswordChanged }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -23,20 +22,16 @@ function PasswordChangeModal({ currentUser, onClose, onPasswordChanged }) {
 
     setSaving(true);
     try {
-      const docRef = doc(db, 'users', 'credentials');
-      const snap = await getDoc(docRef);
-      let users = snap.exists() && snap.data().users ? snap.data().users : loadUsers();
-      const userIndex = users.findIndex((u) => u.username === currentUser.username);
-      
-      if (userIndex === -1) { setError('User not found.'); setSaving(false); return; }
-      if (users[userIndex].password !== currentPassword) { setError('Current password is incorrect.'); setSaving(false); return; }
-
-      users[userIndex].password = newPassword;
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-      await setDoc(docRef, { users }, { merge: true });
+      await updateUsers((users) => {
+        const userIndex = users.findIndex((u) => u.username === currentUser.username);
+        if (userIndex === -1) throw new Error('User not found.');
+        if (users[userIndex].password !== currentPassword) throw new Error('Current password is incorrect.');
+        users[userIndex].password = newPassword;
+        return users;
+      });
       setSuccess('Password changed successfully!');
       setTimeout(() => { onPasswordChanged(); onClose(); }, 1500);
-    } catch (err) { setError('Failed to save to database.'); }
+    } catch (err) { setError(err.code || /offline|network|unavailable/i.test(err.message) ? 'Could not reach the database. Nothing was changed. Check your connection.' : err.message); }
     finally { setSaving(false); }
   };
 

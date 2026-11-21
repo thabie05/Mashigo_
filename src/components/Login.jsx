@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { seedUsersIfMissing } from '../utils/safeWrites';
 import { db } from '../firebase';
 import { loadUsers } from '../data/users';
 import { useTheme } from '../contexts/ThemeContext';
@@ -28,8 +29,7 @@ function Login({ onLogin }) {
       if (snap.exists() && snap.data().users && snap.data().users.length > 0) {
         users = snap.data().users;
       } else {
-        users = loadUsers();
-        await setDoc(docRef, { users }, { merge: true });
+        users = await seedUsersIfMissing();
       }
 
       const user = users.find((u) => String(u.username).trim().toLowerCase() === username.trim().toLowerCase() && u.password === password);

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { updateUsers } from '../utils/safeWrites';
 import { db } from '../firebase';
-import { loadUsers, USERS_STORAGE_KEY } from '../data/users';
+import { loadUsers } from '../data/users';
 import { PERMISSIONS, DEFAULT_USER_PERMISSIONS } from '../data/permissions';
 import ConfirmModal from './ConfirmModal';
 import { UserPlus, Trash2, KeyRound, Save } from 'lucide-react';
@@ -52,11 +53,7 @@ export default function UserManagementPage({ currentUser }) {
 
   // Re-read before every write so we never overwrite a password change made elsewhere
   const saveUsers = async (mutate) => {
-    const snap = await getDoc(credRef());
-    const latest = snap.exists() && snap.data().users?.length ? snap.data().users : loadUsers();
-    const next = mutate(latest);
-    await setDoc(credRef(), { users: next }, { merge: true });
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(next));
+    const next = await updateUsers(mutate); // server-side transaction: fails (writes nothing) when offline
     setUsers(next);
     return next;
   };

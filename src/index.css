@@ -42,7 +42,7 @@
   --accent-yellow-text: #f29900;
   --accent-blue: #e8f0fe;
   --accent-blue-text: #1a73e8;
-  --header-height: 48px;
+  --header-height: 76px;
 
   /* Aliases used by Tailwind-style classes in modals */
   --accent: #8a6a2f;
@@ -269,7 +269,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
-  padding-top: 10px;
+  padding-top: 0;
   transition: background-color 0.3s;
 }
 

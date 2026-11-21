@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { ArrowLeft, Clock } from 'lucide-react';
-import { doc, collection, onSnapshot, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, collection, onSnapshot, getDoc } from 'firebase/firestore';
+import { rollcallRef, monthRef, monthIdNow, SCHEMA_VERSION, migrateIfNeeded } from '../utils/dataModel';
+import { updateEmployeeList } from '../utils/safeWrites';
 import { db } from '../firebase';
 import { recordFingerprintAction } from '../utils/attendanceWrites';
 import EnrollFingerprintModal from './EnrollFingerprintModal';
@@ -97,43 +99,52 @@ function FingerprintKiosk() {
     return () => clearInterval(id);
   }, []);
 
-  // Real-time listener for employees, timeLogs, and today's logs
+  // Employees come from rollcall/data; time logs from this month's document (rollcall_months/{YYYY-MM})
+  const monthId = monthIdNow(now);
   useEffect(() => {
-    const docRef = doc(db, 'rollcall', 'data');
     const unsubscribe = onSnapshot(
-      docRef,
+      rollcallRef(),
       (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
-        const activeEmployees = (data.employees || []).filter((emp) => !emp.isDeleted);
-        setEmployees(activeEmployees);
-        setTimeLogs(data.timeLogs || {});
-
-        const todayKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
-        const employeeMap = {};
-        activeEmployees.forEach((emp) => { employeeMap[emp.id] = emp.name; });
-
-        const timeLogsData = data.timeLogs || {};
-        const logs = [];
-        for (const key of Object.keys(timeLogsData)) {
-          if (!key.endsWith(todayKey)) continue;
-          const entry = timeLogsData[key];
-          const employeeId = key.split('-')[0];
-          const employeeName = employeeMap[employeeId] || 'Unknown';
-          logs.push({
-            employeeId,
-            employeeName,
-            clockIn: entry.clockIn ? new Date(entry.clockIn) : null,
-            clockOut: entry.clockOut ? new Date(entry.clockOut) : null,
-          });
-        }
-        logs.sort((a, b) => (a.clockIn || 0) - (b.clockIn || 0) || a.employeeName.localeCompare(b.employeeName));
-        setTodayLogs(logs);
+        setEmployees((data.employees || []).filter((emp) => !emp.isDeleted));
+        if (data.schemaVersion !== SCHEMA_VERSION) migrateIfNeeded().catch((err) => console.error('Data split failed:', err));
       },
       (err) => console.error('Failed to listen to data:', err)
     );
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      monthRef(monthId),
+      (snap) => setTimeLogs(snap.exists() ? snap.data().timeLogs || {} : {}),
+      (err) => console.error('Failed to listen to time logs:', err)
+    );
+    return () => unsubscribe();
+  }, [monthId]);
+
+  // today's list, built from the time logs + employee names
+  useEffect(() => {
+    const d = new Date();
+    const todayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const employeeMap = {};
+    employees.forEach((emp) => { employeeMap[emp.id] = emp.name; });
+    const logs = [];
+    for (const key of Object.keys(timeLogs)) {
+      if (!key.endsWith(todayKey)) continue;
+      const entry = timeLogs[key];
+      const employeeId = key.slice(0, key.length - 11);
+      logs.push({
+        employeeId,
+        employeeName: employeeMap[employeeId] || 'Unknown',
+        clockIn: entry.clockIn ? new Date(entry.clockIn) : null,
+        clockOut: entry.clockOut ? new Date(entry.clockOut) : null,
+      });
+    }
+    logs.sort((x, y) => (x.clockIn || 0) - (y.clockIn || 0) || x.employeeName.localeCompare(y.employeeName));
+    setTodayLogs(logs);
+  }, [employees, timeLogs]);
 
   // Firestore fingerprint sync
   useEffect(() => {
@@ -182,12 +193,14 @@ function FingerprintKiosk() {
       return;
     }
     const newEmp = { id: Date.now().toString(), name, isDeleted: false };
-    const docRef = doc(db, 'rollcall', 'data');
-    const snap = await getDoc(docRef);
-    const currentEmployees = snap.exists() ? snap.data().employees || [] : [];
     const nowD = new Date();
     const log = { id: Date.now() + Math.floor(Math.random() * 1000), type: 'employee', employeeId: newEmp.id, employeeName: newEmp.name, day: nowD.getDate(), date: `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}-${String(nowD.getDate()).padStart(2, '0')}`, status: 'Employee Added', note: 'Added from kiosk', editor: 'Kiosk (admin password)', editedAt: nowD.toISOString() };
-    await updateDoc(docRef, { employees: [...currentEmployees, newEmp], history: arrayUnion(log) });
+    try {
+      await updateEmployeeList((list) => [...list, newEmp], [log]);
+    } catch (err) {
+      setAdminError('Could not save the new employee (nothing was changed). Check the connection.');
+      return;
+    }
     setEnrollingNewEmployee(newEmp);
     setShowAdminLogin(false);
     setAdminPassword('');
